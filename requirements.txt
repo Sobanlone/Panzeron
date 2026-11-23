@@ -1,0 +1,7 @@
+# Core application has NO required dependencies (Python 3.11+ standard library).
+# Optional, for full capability:
+Pillow>=10.1          # image metadata (EXIF), redaction, metadata stripping
+pytesseract>=0.3.10   # OCR (also install the Tesseract engine itself)
+pymupdf>=1.24         # PDF text extraction
+# Development only:
+# playwright>=1.40    # scripts/ui_smoke.py

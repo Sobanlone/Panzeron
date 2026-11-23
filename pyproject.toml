@@ -1,0 +1,21 @@
+[project]
+name = "ultrimater"
+version = "0.1.0"
+description = "Local-first AI-assisted digital protection platform"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+full = ["Pillow>=10.1", "pytesseract>=0.3.10", "pymupdf>=1.24"]
+
+[project.scripts]
+ultrimater = "ultrimater.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ultrimater*"]
+[tool.setuptools.package-data]
+ultrimater = ["web/**/*"]
