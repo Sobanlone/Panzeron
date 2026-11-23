@@ -24,8 +24,18 @@ if %errorlevel%==0 (
   echo Installer: installer\Output\Panzeron-Setup-0.1.0.exe
   start "" "installer\Output"
 ) else (
-  echo Inno Setup not found; skipping the installer. Get it from https://jrsoftware.org/isinfo.php to also create Setup.exe
-  start "" "dist\Panzeron"
+  set "ISCC="
+  if exist "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" set "ISCC=%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe"
+  if not defined ISCC if exist "%ProgramFiles%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles%\Inno Setup 6\ISCC.exe"
+  if not defined ISCC if exist "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
+  if defined ISCC (
+    "%ISCC%" installer\panzeron.iss || goto :fail
+    echo Installer: installer\Output\Panzeron-Setup-0.1.0.exe
+    start "" "installer\Output"
+  ) else (
+    echo Inno Setup not found. Run: winget install JRSoftware.InnoSetup
+    goto :fail
+  )
 )
 pause
 exit /b 0

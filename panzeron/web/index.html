@@ -26,12 +26,10 @@
     <div class="boot-orb">
       <svg viewBox="0 0 100 100"><circle class="ring" cx="50" cy="50" r="46"/><circle class="ring2" cx="50" cy="50" r="38"/></svg>
       <i class="shock"></i><i class="shock s2"></i><b class="ball"></b>
-      <!-- the dragon: one shape (img/dragon.png) used as a mask and painted in the accent colour; it circles the orb, passing in front and behind -->
-      <div class="boot-orbit"><div class="bo-x"><div class="bo-y"><div class="bo-turn">
-        <span class="bo-glow"><i class="bo-dragon"></i></span><i class="bo-dragon"></i>
-      </div></div></div></div>
+      <!-- a 3D-style Matrix dragon flies around the orb, passing in front and behind it -->
+      <div class="boot-orbit"><canvas class="matrix-dragon" width="360" height="480" aria-hidden="true"></canvas></div>
     </div>
-    <div class="boot-word"><span>U</span><span>L</span><span>T</span><span>R</span><span>I</span><span>M</span><span>A</span><span>T</span><span>E</span><span>R</span></div>
+    <div class="boot-word"><span>P</span><span>A</span><span>N</span><span>Z</span><span>E</span><span>R</span><span>O</span><span>N</span></div>
     <div class="boot-sub">Protect the person</div>
     <div class="boot-bar"><i></i></div>
     <div class="boot-status" id="boot-status">Starting local engine…</div>

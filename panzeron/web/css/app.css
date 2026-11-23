@@ -420,30 +420,22 @@ html.booting,html.booting body{overflow:hidden}
 @keyframes letter{to{opacity:1;transform:none;filter:blur(0)}}
 @keyframes fade{to{opacity:1}}
 
-/* ---- startup: the dragon ----------------------------------------------------------------------------------------------
-   One dragon shape (img/dragon.png) is used as a MASK, so the colour is simply the accent: change the accent in Settings and the
-   dragon follows. It circles the orb on a tilted ellipse: x and y are two sine sweeps a quarter-turn apart (so the path is a true
-   ellipse), it grows with y (nearer = bigger), turns to face its direction of travel at each end, and its stacking order flips
-   so it passes in front of the orb, then behind it. All transform/opacity: it stays smooth while the page is busy loading. */
+/* ---- startup: the Matrix dragon -------------------------------------------------------------------------------
+   A supplied cyber-dragon artwork is rendered as a layered, self-contained canvas. The flight path uses perspective
+   scaling, bank, glow and z-order so the dragon visibly flies in front of and behind the ball. */
 #boot *,#boot *::before,#boot *::after{animation-play-state:paused}                       /* the timeline starts when boot.js adds .go */
 #boot.go *,#boot.go *::before,#boot.go *::after{animation-play-state:running}
-#boot{--bo-rx:150px;--bo-ry:36px;--bo-t:3s;--bo-sine:cubic-bezier(.37,0,.63,1)}
 .boot-orbit{position:absolute;left:50%;top:50%;width:0;height:0;z-index:0;opacity:0;pointer-events:none;
-  animation:bo-in .9s cubic-bezier(.2,.8,.2,1) .8s forwards,bo-depth var(--bo-t) linear .8s infinite}
-.bo-x,.bo-y{position:absolute;left:0;top:0;width:0;height:0}
-.bo-x{animation:bo-x calc(var(--bo-t) / 2) var(--bo-sine) .8s infinite alternate}
-.bo-y{animation:bo-y calc(var(--bo-t) / 2) var(--bo-sine) calc(.8s - var(--bo-t) / 4) infinite alternate}
-.bo-turn{position:absolute;left:-39px;top:-48.5px;width:78px;height:97px;animation:bo-turn var(--bo-t) ease-in-out .8s infinite}
-.bo-dragon{position:absolute;inset:0;display:block;
-  -webkit-mask:url(/img/dragon.png) center/contain no-repeat;mask:url(/img/dragon.png) center/contain no-repeat;
-  background:linear-gradient(165deg,var(--accent2,#8fa8ff) 0%,var(--accent,#4169e1) 50%,var(--accent-mid,#2f4fc4) 100%)}
-.bo-glow{position:absolute;inset:0;filter:blur(10px);opacity:.6}
-.bo-glow .bo-dragon{background:rgb(var(--accent-rgb,65,105,225))}
-@keyframes bo-in{from{opacity:0;transform:scale(.15)}to{opacity:1;transform:scale(1)}}
-@keyframes bo-x{from{transform:translateX(calc(-1 * var(--bo-rx)))}to{transform:translateX(var(--bo-rx))}}
-@keyframes bo-y{from{transform:translateY(calc(-1 * var(--bo-ry))) scale(.8)}to{transform:translateY(var(--bo-ry)) scale(1.12)}}
-@keyframes bo-turn{0%{transform:scaleX(0)}4%,46%{transform:scaleX(1)}54%,96%{transform:scaleX(-1)}100%{transform:scaleX(0)}}
-@keyframes bo-depth{0%,49.99%{z-index:3}50%,100%{z-index:0}}
+  transform-origin:50% 50%;transform-style:preserve-3d}
+.matrix-dragon{position:absolute;left:-90px;top:-120px;width:180px;height:240px;border-radius:50% 50% 42% 42%;object-fit:cover;
+  background:#02050a;mix-blend-mode:screen;filter:brightness(.82) contrast(1.38) saturate(1.18) hue-rotate(-8deg);
+  mask-image:radial-gradient(ellipse at 50% 46%,#000 0 58%,rgba(0,0,0,.82) 68%,transparent 86%);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 46%,#000 0 58%,rgba(0,0,0,.82) 68%,transparent 86%)}
+.boot-orbit::before{content:"";position:absolute;left:-108px;top:-138px;width:216px;height:276px;border:1px solid rgba(var(--accent-rgb),.22);border-radius:50%;transform:rotateX(68deg) translateZ(-30px);
+  box-shadow:0 0 28px rgba(var(--accent-rgb),.28),inset 0 0 18px rgba(var(--accent-rgb),.12)}
+.boot-orbit::after{content:"";position:absolute;left:30%;right:30%;bottom:-22px;height:18px;border-radius:50%;background:rgba(var(--accent-rgb),.38);
+  filter:blur(12px);transform:rotateX(70deg);animation:dragon-shadow 1.1s ease-in-out infinite alternate}
+@keyframes dragon-shadow{from{transform:rotateX(70deg) scale(.68);opacity:.35}to{transform:rotateX(70deg) scale(1.18);opacity:.8}}
 
 /* ---- startup, calm variant: Windows asks for reduced motion -> a still splash. Nothing orbits, spins, slides or scales; only fades. */
 html.calm .boot-beam,html.calm .boot-orb .shock,html.calm .boot-orb .ring2{display:none}
@@ -452,9 +444,8 @@ html.calm .boot-orb .ball{transform:none;opacity:0;animation:fade .6s ease .1s f
 html.calm .boot-word span{transform:none;filter:none;animation:fade .6s ease .25s forwards}
 html.calm .boot-sub{animation-delay:.5s}html.calm .boot-bar{animation-delay:.4s}html.calm .boot-status{animation-delay:.6s}
 html.calm .boot-bar i{animation-duration:.9s;animation-delay:.5s}
-html.calm .boot-orbit{animation:fade .8s ease .2s forwards;z-index:0}
-html.calm .bo-x,html.calm .bo-y,html.calm .bo-turn{animation:none}
-html.calm .bo-turn{transform:translate(0,4px) scale(2.9);opacity:.4}   /* a large, quiet dragon emblem behind the orb */
+html.calm .boot-orbit{animation:fade .8s ease .2s forwards;z-index:0;transform:scale(1.15)}
+html.calm .boot-orbit::after{animation:none}
 html.calm .boot-half,html.calm .boot-core{transition:none}
 html.calm #boot{transition:opacity .45s ease}
 html.calm #boot.open{opacity:0}
