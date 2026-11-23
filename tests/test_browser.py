@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 
 from tests.helpers import new_app
-from ultrimater.shield import browsers
-from ultrimater.shield.quarantine import ConsentRequired
+from panzeron.shield import browsers
+from panzeron.shield.quarantine import ConsentRequired
 
 EICAR = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
 US = lambda unix: int(unix * 1_000_000) + browsers.EPOCH_DELTA_US
@@ -32,7 +32,7 @@ def make_chrome(root: Path, downloads: Path, history_urls, dl_rows, extensions=(
     con.commit(); con.close()
     for eid, man in extensions:
         d = prof / "Extensions" / eid / "1.0_0"; d.mkdir(parents=True); (d / "manifest.json").write_text(json.dumps(man))
-    # things Ultrimater must never read
+    # things Panzeron must never read
     (prof / "Login Data").write_bytes(b"PASSWORD-DB"); (prof / "Cookies").write_bytes(b"COOKIE-DB")
     return prof
 

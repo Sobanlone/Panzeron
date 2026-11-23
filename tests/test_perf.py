@@ -1,8 +1,8 @@
 import threading, time, unittest
 from unittest import mock
-from ultrimater.core.cache import BackgroundCache
-from ultrimater.core.audit import AuditLog
-from ultrimater.shield import defender
+from panzeron.core.cache import BackgroundCache
+from panzeron.core.audit import AuditLog
+from panzeron.shield import defender
 from tests.helpers import new_app
 
 

@@ -1,8 +1,8 @@
 import json, os, threading, time, unittest, urllib.request
 from pathlib import Path
 from unittest import mock
-from ultrimater import diagnostics as dx
-from ultrimater.api.server import create_server
+from panzeron import diagnostics as dx
+from panzeron.api.server import create_server
 from tests.helpers import new_app
 
 
@@ -35,7 +35,7 @@ class DiagnosticsTests(unittest.TestCase):
         self.assertEqual(self.by["powershell"]["status"], "info"); self.assertEqual(self.by["winsec"]["status"], "info")
 
     def test_report_is_plain_text_with_summary_and_masks_personal_details(self):
-        rep = self.res["report"]; self.assertIn("Ultrimater diagnostics report", rep); self.assertIn("Summary:", rep)
+        rep = self.res["report"]; self.assertIn("Panzeron diagnostics report", rep); self.assertIn("Summary:", rep)
         self.assertNotIn(str(Path.home()), rep)
         user = os.environ.get("USER") or os.environ.get("USERNAME") or ""
         if len(user) > 2: self.assertNotIn(user, rep.replace("<user>", ""))

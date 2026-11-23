@@ -4,7 +4,7 @@ import re
 import unittest
 from pathlib import Path
 
-WEB = Path(__file__).resolve().parent.parent / "ultrimater" / "web" / "js"
+WEB = Path(__file__).resolve().parent.parent / "panzeron" / "web" / "js"
 
 
 class BackgroundEffectTests(unittest.TestCase):

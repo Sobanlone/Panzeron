@@ -4,27 +4,27 @@ import sys, tempfile, threading, time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from playwright.sync_api import sync_playwright
-from ultrimater.app import UltrimaterApp
-from ultrimater.api.server import create_server
+from panzeron.app import PanzeronApp
+from panzeron.api.server import create_server
 
 shots = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(tempfile.mkdtemp())
 shots.mkdir(parents=True, exist_ok=True)
 # Reproduce the Windows condition: Windows Security lookups (PowerShell) take 4 seconds. Navigation must not wait for them.
-import ultrimater.shield.defender as dfn
+import panzeron.shield.defender as dfn
 _orig_snapshot = dfn.snapshot
 def _slow_snapshot():
     time.sleep(4); return _orig_snapshot()
 dfn.snapshot = _slow_snapshot
-import ultrimater.shield.scopes as scp
-from ultrimater.core import picker as pkr
+import panzeron.shield.scopes as scp
+from panzeron.core import picker as pkr
 QDIR = Path(tempfile.mkdtemp())                       # stands in for "Downloads, Desktop, ..." so the quick scan is deterministic
-(QDIR / "evil.txt").write_bytes(b"ULTRIMATER-SIMULATED-THREAT-V1"); (QDIR / "fine.txt").write_text("nothing here")
+(QDIR / "evil.txt").write_bytes(b"PANZERON-SIMULATED-THREAT-V1"); (QDIR / "fine.txt").write_text("nothing here")
 _real_plan = scp.build_plan
 def _plan(scope, home=None):
     p = _real_plan(scope, home)
     return scp.ScopePlan(p.id, p.label, [QDIR] if scope == "quick" else p.roots, p.skip, p.broad, p.summary, p.estimate)
 scp.build_plan = _plan
-app = UltrimaterApp(Path(tempfile.mkdtemp()))
+app = PanzeronApp(Path(tempfile.mkdtemp()))
 srv, tok = create_server(app, 0)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 base = f"http://127.0.0.1:{srv.server_address[1]}/"
@@ -36,8 +36,8 @@ def expect(cond, msg):
 with sync_playwright() as p:
     b = p.chromium.launch()
     bctx = b.new_context(viewport={"width": 1440, "height": 900}, color_scheme="dark")
-    bctx.add_init_script("try{localStorage.setItem('ultrimater-intro','off')}catch(e){}")      # the startup intro delays the first screen on purpose; it has its own checks
-    bctx.add_init_script("try{if(!localStorage.getItem('ultrimater-prefs'))localStorage.setItem('ultrimater-prefs','{\"fx\":\"full\"}')}catch(e){}")
+    bctx.add_init_script("try{localStorage.setItem('panzeron-intro','off')}catch(e){}")      # the startup intro delays the first screen on purpose; it has its own checks
+    bctx.add_init_script("try{if(!localStorage.getItem('panzeron-prefs'))localStorage.setItem('panzeron-prefs','{\"fx\":\"full\"}')}catch(e){}")
     pg = bctx.new_page()
     pg.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
     pg.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}") if m.type in ("error",) else None)
@@ -52,7 +52,7 @@ with sync_playwright() as p:
         time.sleep(0.2)
     expect(resolved, "Checking… resolves by itself when the probe finishes (no reload needed)")
     expect("[object" not in pg.inner_text("#view") and "null" not in pg.inner_text("#view").lower().split(), "No stringified DOM objects or 'null' on Command Centre")
-    expect("ultrimater" in pg.inner_text(".brand").lower(), "Command Centre renders with Ultrimater branding")
+    expect("panzeron" in pg.inner_text(".brand").lower(), "Command Centre renders with Panzeron branding")
     bf = pg.evaluate("getComputedStyle(document.querySelector('.card')).backdropFilter")
     expect("blur" in bf, f"Cards use real backdrop blur (liquid glass): {bf[:40]}")
     expect(pg.locator("nav a svg").count() == 8, "All 8 navigation items have icons")
@@ -133,7 +133,7 @@ with sync_playwright() as p:
     expect(Path(app.paths.demo, "shield_fixtures", "simulated_threat.txt").exists(), "Cancelling leaves the file untouched")
 
     # ---------------- Response Centre at scale: search, filters, pagination, bulk ----------------
-    from ultrimater.core.models import Confidence, Evidence, EvidenceTier, Finding, Module, Severity
+    from panzeron.core.models import Confidence, Evidence, EvidenceTier, Finding, Module, Severity
     SV = [Severity.INFO, Severity.LOW, Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL]
     for i in range(80):
         app.db.save_finding(Finding(Module.SHIELD if i % 2 else Module.VISION, f"Bulk item {i} {'zebra' if i % 10 == 0 else 'plain'}", SV[i % 5], Confidence.LOW,
@@ -217,7 +217,7 @@ with sync_playwright() as p:
     expect(str(wd) in pg.inner_text(".modal.permission") and "new files" in pg.inner_text(".modal.permission").lower(), "Enabling the Downloads watcher asks permission and names the folder")
     pg.click(".modal.permission button:has-text('Allow watching')")
     expect(wait_for(lambda: app.watcher.running, 5), "Watcher starts after approval")
-    time.sleep(0.5); (wd / "dl.txt").write_bytes(b"ULTRIMATER-SIMULATED-THREAT-V1")
+    time.sleep(0.5); (wd / "dl.txt").write_bytes(b"PANZERON-SIMULATED-THREAT-V1")
     expect(wait_for(lambda: any(f.source == "dl.txt" for f in app.db.list_findings(module="shield")), 8), "A new file landing in the watched folder is detected")
     pg.reload(); pg.wait_for_selector(".tile")
     expect(wait_for(lambda: "checked this session" in view_text(), 8), "Watcher card shows its activity")
@@ -236,9 +236,9 @@ with sync_playwright() as p:
 
 
     # ---------------- danger levels, self-trust, integrity ----------------
-    from ultrimater.shield.trust import TrustStore
+    from panzeron.shield.trust import TrustStore
     import shutil as _sh
-    tdir = Path(tempfile.mkdtemp()); (tdir / "eicar_like.txt").write_bytes(b"ULTRIMATER-TEST-MARKER-HARMLESS-V1")
+    tdir = Path(tempfile.mkdtemp()); (tdir / "eicar_like.txt").write_bytes(b"PANZERON-TEST-MARKER-HARMLESS-V1")
     app.picker = lambda kind, title, flt: [str(tdir)]
     pg.evaluate("location.hash='#/shield'"); pg.reload(); pg.wait_for_selector(".tile")
     pg.click(".tile:has-text('Choose a folder')")
@@ -247,23 +247,23 @@ with sync_playwright() as p:
     expect(wait_for(lambda: "findings from this scan" in view_text().lower(), 10) and pg.locator("button:has-text('Quarantine all high-severity')").count() == 0, "No 'quarantine all' prompt appears for harmless test files")
     pg.screenshot(path=str(shots / "11_test_file_verdict.png"), full_page=True)
 
-    # the user's complaint: scanning Ultrimater's own folder must not flag its own files
+    # the user's complaint: scanning Panzeron's own folder must not flag its own files
     proj = Path(__file__).resolve().parent.parent
-    own = Path(tempfile.mkdtemp()) / "ultrimater"; _sh.copytree(proj, own, ignore=_sh.ignore_patterns("__pycache__", ".git", "MANIFEST.sha256"))
+    own = Path(tempfile.mkdtemp()) / "panzeron"; _sh.copytree(proj, own, ignore=_sh.ignore_patterns("__pycache__", ".git", "MANIFEST.sha256"))
     TrustStore(own).rebuild(); app.trust = TrustStore(own)           # a genuine install with its shipped manifest
     app.picker = lambda kind, title, flt: [str(own)]
     pg.evaluate("location.hash='#/shield'"); pg.reload(); pg.wait_for_selector(".tile"); n_scans = len(app.scan_history())
     pg.click(".tile:has-text('Choose a folder')")
-    expect(wait_for(lambda: len(app.scan_history()) == n_scans + 1 and "no threats found" in view_text().lower(), 40), "Scanning Ultrimater's own folder through the UI finds NO threats")
+    expect(wait_for(lambda: len(app.scan_history()) == n_scans + 1 and "no threats found" in view_text().lower(), 40), "Scanning Panzeron's own folder through the UI finds NO threats")
     last = app.scan_history()[0]["summary"]; expect(last["finding_ids"] == [] and last["files_trusted"] > 50, f"...because its own files are verified by hash ({last['files_trusted']} trusted)")
     pg.click("summary:has-text('Coverage report')"); time.sleep(0.2)
     expect("verified by hash" in view_text(), "Coverage report explains the trusted files")
-    (own / "ultrimater" / "app.py").write_text("# tampered\n"); n_scans = len(app.scan_history())
+    (own / "panzeron" / "app.py").write_text("# tampered\n"); n_scans = len(app.scan_history())
     pg.click(".tile:has-text('Choose a folder')")
-    expect(wait_for(lambda: len(app.scan_history()) == n_scans + 1 and "An Ultrimater program file was modified" in view_text(), 40), "A tampered Ultrimater file IS flagged (trust is by content, not folder)")
+    expect(wait_for(lambda: len(app.scan_history()) == n_scans + 1 and "An Panzeron program file was modified" in view_text(), 40), "A tampered Panzeron file IS flagged (trust is by content, not folder)")
 
     pg.evaluate("location.hash='#/settings'"); pg.wait_for_selector(".seg"); pg.click(".seg button:has-text('Protection')"); time.sleep(0.3)
-    pg.click("button:has-text('Verify Ultrimater')"); expect(wait_for(lambda: "differ from the manifest" in view_text() and "app.py" in view_text(), 15), "Integrity check reports the modified file")
+    pg.click("button:has-text('Verify Panzeron')"); expect(wait_for(lambda: "differ from the manifest" in view_text() and "app.py" in view_text(), 15), "Integrity check reports the modified file")
     pg.click("button:has-text('Trust my current files')"); pg.wait_for_selector(".modal"); pg.click(".modal button:has-text('Trust these files')")
     expect(wait_for(lambda: "match the shipped manifest" in view_text(), 15), "Rebuilding trust needs confirmation, then verification passes")
 
@@ -275,7 +275,7 @@ with sync_playwright() as p:
     expect(pg.locator(".dx.pass").count() >= 5 and pg.locator(".dx.fail").count() == 0, f"Results are colour-coded ({pg.locator('.dx.pass').count()} pass, {pg.locator('.dx.fail').count()} fail)")
     with pg.expect_download() as dl: pg.click("button:has-text('Save report')")
     rep = Path(dl.value.path()).read_text()
-    expect("Ultrimater diagnostics report" in rep and "Summary:" in rep and str(Path.home()) not in rep, "The saved report is plain text and masks the home folder")
+    expect("Panzeron diagnostics report" in rep and "Summary:" in rep and str(Path.home()) not in rep, "The saved report is plain text and masks the home folder")
     pg.screenshot(path=str(shots / "12_diagnostics.png"), full_page=True)
     d2 = design(); expect(True, "Diagnostics page rendered")
 
@@ -287,14 +287,14 @@ with sync_playwright() as p:
     expect("Settings" in pg.inner_text("#title") and time.perf_counter() - t0 < 4, "24 rapid tab switches settle on the last tab without hanging")
     expect(pg.evaluate("getComputedStyle(document.querySelector('.o1')).animationName") == "none", "Animated background is off by default (saves GPU)")
     # Lite glass mode (auto-selected on slow graphics) removes live blur but keeps the layout usable
-    app.set_ui_prefs({"fx": "lite"}); pg.evaluate("localStorage.setItem('ultrimater-prefs','{\"fx\":\"lite\"}')"); pg.reload(); pg.wait_for_selector(".stage .card")
+    app.set_ui_prefs({"fx": "lite"}); pg.evaluate("localStorage.setItem('panzeron-prefs','{\"fx\":\"lite\"}')"); pg.reload(); pg.wait_for_selector(".stage .card")
     expect(pg.evaluate("document.documentElement.dataset.fx") == "lite" and pg.evaluate("getComputedStyle(document.querySelector('.card')).backdropFilter") == "none", "Lite mode disables live blur")
     pg.screenshot(path=str(shots / "5_lite_settings.png"), full_page=True)
 
     # ---------------- customisation (Settings -> Appearance) ----------------
     css = lambda var: pg.evaluate(f"getComputedStyle(document.documentElement).getPropertyValue('{var}').trim()")
     toast_text = lambda: pg.inner_text("#toasts")
-    app.set_ui_prefs({"fx": "full"}); pg.evaluate("localStorage.setItem('ultrimater-prefs','{\"fx\":\"full\"}')"); pg.evaluate("location.hash='#/settings'"); pg.reload(); pg.wait_for_selector(".preset")
+    app.set_ui_prefs({"fx": "full"}); pg.evaluate("localStorage.setItem('panzeron-prefs','{\"fx\":\"full\"}')"); pg.evaluate("location.hash='#/settings'"); pg.reload(); pg.wait_for_selector(".preset")
     expect(pg.locator(".preset").count() >= 6, f"Theme presets are listed ({pg.locator('.preset').count()})")
     pad0 = pg.evaluate("parseFloat(getComputedStyle(document.querySelector('.card')).paddingTop)")
     pg.click(".preset:has-text('Crimson Ops')"); time.sleep(0.4)
@@ -329,7 +329,7 @@ with sync_playwright() as p:
     with pg.expect_download() as dl: pg.click("button:has-text('Export theme file')")
     import json as _json
     exported = _json.loads(Path(dl.value.path()).read_text())
-    expect(exported.get("accent") == "#20a0ff" and exported.get("ultrimater_theme") == 1, "Export produces a theme file")
+    expect(exported.get("accent") == "#20a0ff" and exported.get("panzeron_theme") == 1, "Export produces a theme file")
     pg.fill("textarea[aria-label='Theme JSON']", '{"accent":"red;background:url(//evil.example)","blur":999,"hack":1,"bg":"ocean"}')
     pg.click("button:has-text('Apply pasted theme')"); time.sleep(0.4)
     expect(css("--accent") == "#4169e1" and css("--blur") == "40px" and "accent" in toast_text() and "hack" in toast_text(), "Malicious/invalid theme values are rejected or clamped, valid ones applied")

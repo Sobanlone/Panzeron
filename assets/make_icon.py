@@ -1,6 +1,6 @@
-"""Regenerates assets/ultrimater.ico and the web favicon (requires Pillow + NumPy).
+"""Regenerates assets/panzeron.ico and the web favicon (requires Pillow + NumPy).
 
-The icon is the Ultrimater dragon (assets/dragon-source.png) in ember red on the dark rounded tile, lit by a soft orb glow.
+The icon is the Panzeron dragon (assets/dragon-source.png) in ember red on the dark rounded tile, lit by a soft orb glow.
 Small sizes (16/24/32 px) are drawn separately with a bigger dragon and no glow detail so the silhouette stays readable.
 Usage: python assets/make_icon.py            (run from the project folder)
 """
@@ -15,7 +15,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "assets" / "dragon-source.png"
-ICO, FAVICON = ROOT / "assets" / "ultrimater.ico", ROOT / "ultrimater" / "web" / "favicon.png"
+ICO, FAVICON = ROOT / "assets" / "panzeron.ico", ROOT / "panzeron" / "web" / "favicon.png"
 BASE = 1024                                    # master canvas; every size is downsampled from this
 SIZES = [256, 128, 64, 48, 32, 24, 16]
 

@@ -10,8 +10,8 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from tests.helpers import new_app
-from ultrimater.connectors import gmail
-from ultrimater.shield.quarantine import ConsentRequired
+from panzeron.connectors import gmail
+from panzeron.shield.quarantine import ConsentRequired
 
 b64 = lambda s: base64.urlsafe_b64encode(s.encode()).decode().rstrip("=")
 PHISH = {"id": "m1", "internalDate": str(int(time.time() * 1000)), "payload": {"mimeType": "multipart/alternative", "headers": [

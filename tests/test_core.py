@@ -1,7 +1,7 @@
 import unittest
-from ultrimater.core.models import *
-from ultrimater.core.masking import mask_value
-from ultrimater.core.audit import AuditLog
+from panzeron.core.models import *
+from panzeron.core.masking import mask_value
+from panzeron.core.audit import AuditLog
 from tests.helpers import SALT, new_app
 
 

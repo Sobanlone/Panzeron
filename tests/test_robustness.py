@@ -2,10 +2,10 @@
 (1) no exception ever escapes, and (2) nothing takes unreasonable time (catches regex backtracking / ReDoS)."""
 import io, os, random, struct, tempfile, time, unittest, zipfile
 from pathlib import Path
-from ultrimater.shield import containers, pe as pelib
-from ultrimater.shield.scanner import Scanner, inspect_content
-from ultrimater.vision import pii
-from ultrimater.sentinel import analyzer as sn
+from panzeron.shield import containers, pe as pelib
+from panzeron.shield.scanner import Scanner, inspect_content
+from panzeron.vision import pii
+from panzeron.sentinel import analyzer as sn
 from tests.helpers import SALT
 from tests.test_shield2 import build_pe
 

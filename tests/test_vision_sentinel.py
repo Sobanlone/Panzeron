@@ -1,11 +1,11 @@
 import tempfile, unittest
 from pathlib import Path
-from ultrimater.vision import pii
-from ultrimater.vision.analyze import analyze_text, analyze_file, redact_to_copy, strip_exif_copy
-from ultrimater.vision.extract import ocr_status, read_exif
-from ultrimater.sentinel import analyzer as sn
-from ultrimater.ai.provider import ProviderError, validate_scam_judgement, wrap_untrusted
-from ultrimater import demo
+from panzeron.vision import pii
+from panzeron.vision.analyze import analyze_text, analyze_file, redact_to_copy, strip_exif_copy
+from panzeron.vision.extract import ocr_status, read_exif
+from panzeron.sentinel import analyzer as sn
+from panzeron.ai.provider import ProviderError, validate_scam_judgement, wrap_untrusted
+from panzeron import demo
 from tests.helpers import SALT
 
 
@@ -72,7 +72,7 @@ class VisionFileTests(unittest.TestCase):
         again = analyze_file(out, SALT); self.assertNotIn("pii.email", {f.category for f in again.findings})
 
     def test_missing_ocr_is_reported_not_hidden(self):
-        from ultrimater.vision import extract
+        from panzeron.vision import extract
         orig = extract.tesseract_cmd; extract.tesseract_cmd = lambda c="": None
         try:
             r = analyze_file(self.d / "maya_chat_screenshot.png", SALT)

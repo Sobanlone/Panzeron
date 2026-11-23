@@ -1,4 +1,4 @@
-# Builds a real Windows installer (Ultrimater-Setup-0.1.0.exe) and a portable zip in the cloud: no tools needed on your own PC.
+# Builds a real Windows installer (Panzeron-Setup-0.1.0.exe) and a portable zip in the cloud: no tools needed on your own PC.
 # Use: push this folder to a GitHub repository -> Actions tab -> "Build Windows app" -> Run workflow -> download the artifact.
 # Tag a version (git tag v0.1.0 && git push --tags) and the installer is also attached to a GitHub Release with a public download link.
 name: Build Windows app
@@ -20,26 +20,26 @@ jobs:
       - name: Run tests on real Windows (does not block the build; read the log)
         continue-on-error: true
         run: python -m unittest discover -s tests -t .
-      - name: Build Ultrimater.exe
-        run: pyinstaller --noconfirm --clean --windowed --name Ultrimater --icon assets/ultrimater.ico --collect-submodules ultrimater --add-data "ultrimater/web;ultrimater/web" ultrimater_app.py
-      - name: Write the integrity manifest (lets Ultrimater recognise its own files by hash)
-        run: python scripts/make_manifest.py dist/Ultrimater
+      - name: Build Panzeron.exe
+        run: pyinstaller --noconfirm --clean --windowed --name Panzeron --icon assets/panzeron.ico --collect-submodules panzeron --add-data "panzeron/web;panzeron/web" panzeron_app.py
+      - name: Write the integrity manifest (lets Panzeron recognise its own files by hash)
+        run: python scripts/make_manifest.py dist/Panzeron
       - name: Portable zip
-        run: Compress-Archive -Path dist/Ultrimater -DestinationPath dist/Ultrimater-portable-0.1.0.zip -Force
+        run: Compress-Archive -Path dist/Panzeron -DestinationPath dist/Panzeron-portable-0.1.0.zip -Force
       - name: Build installer
         run: |
           choco install innosetup -y --no-progress
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\ultrimater.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\panzeron.iss
       - uses: actions/upload-artifact@v4
         with:
-          name: Ultrimater-Windows
+          name: Panzeron-Windows
           path: |
             installer/Output/*.exe
-            dist/Ultrimater-portable-0.1.0.zip
+            dist/Panzeron-portable-0.1.0.zip
       - name: Attach to a GitHub Release (tags only)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
             installer/Output/*.exe
-            dist/Ultrimater-portable-0.1.0.zip
+            dist/Panzeron-portable-0.1.0.zip

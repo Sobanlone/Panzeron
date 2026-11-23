@@ -3,7 +3,7 @@ nothing invented, and a working light/dark toggle."""
 import re, unittest
 from pathlib import Path
 
-WEB = Path(__file__).resolve().parent.parent / "ultrimater" / "web"
+WEB = Path(__file__).resolve().parent.parent / "panzeron" / "web"
 FILES = [WEB / "css" / "app.css", WEB / "index.html", *sorted((WEB / "js").rglob("*.js"))]
 
 
@@ -47,14 +47,14 @@ class DesignRuleTests(unittest.TestCase):
         html = (WEB / "index.html").read_text(); css = (WEB / "css" / "app.css").read_text()
         self.assertIn('id="theme"', html)
         self.assertIn('data-theme="light"', css)
-        self.assertIn("ultrimater-theme", (WEB / "js" / "app.js").read_text())
+        self.assertIn("panzeron-theme", (WEB / "js" / "app.js").read_text())
         self.assertIn("theme-boot.js", html)                                           # CSP forbids inline scripts: preload is a file
         self.assertNotIn("<script>", html)
 
     def test_startup_intro_is_skippable_and_csp_safe(self):
         html = (WEB / "index.html").read_text(); boot = (WEB / "js" / "theme-boot.js").read_text()
         self.assertIn('id="boot"', html); self.assertIn("lg-refract", html)
-        for gate in ("prefers-reduced-motion", "ultrimater-intro", "ultrimater-booted", "anim"):
+        for gate in ("prefers-reduced-motion", "panzeron-intro", "panzeron-booted", "anim"):
             self.assertIn(gate, boot, gate)                                            # intro respects every opt-out
         self.assertNotIn("<script>", html)
         self.assertIn("backdrop-filter:url(#lg-refract)", (WEB / "css" / "app.css").read_text().replace(" ", "").replace("(backdrop-filter:", "(backdrop-filter:"))

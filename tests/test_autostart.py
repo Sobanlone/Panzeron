@@ -1,5 +1,5 @@
 import unittest
-from ultrimater import autostart
+from panzeron import autostart
 
 
 class FakeKey:
@@ -31,7 +31,7 @@ class FakeReg:
         del k.store[name]
     # helpers for the tests
     def run_values(self): return self.keys.get(autostart.RUN_KEY, {})
-    def disable_in_task_manager(self, name="Ultrimater"):
+    def disable_in_task_manager(self, name="Panzeron"):
         self.keys.setdefault(autostart.APPROVED_KEY, {})[name] = bytes([3]) + bytes(11)       # what Task Manager writes for "Disabled"
 
 
@@ -41,8 +41,8 @@ class AutostartTests(unittest.TestCase):
         self.assertFalse(autostart.status(reg)["enabled"])
         st = autostart.set_enabled(True, reg)
         self.assertTrue(st["enabled"] and st["current"])
-        self.assertEqual(list(reg.run_values()), ["Ultrimater"])          # only its own value, nothing else touched
-        self.assertTrue(reg.run_values()["Ultrimater"].startswith('"'))   # quoted path: safe with spaces
+        self.assertEqual(list(reg.run_values()), ["Panzeron"])          # only its own value, nothing else touched
+        self.assertTrue(reg.run_values()["Panzeron"].startswith('"'))   # quoted path: safe with spaces
         self.assertFalse(autostart.set_enabled(False, reg)["enabled"])
         self.assertEqual(reg.run_values(), {})
 
@@ -62,29 +62,29 @@ class AutostartTests(unittest.TestCase):
         st = autostart.status(reg)
         self.assertFalse(st["enabled"]); self.assertTrue(st["blocked_by_windows"])
 
-    def test_turning_it_on_again_clears_windows_disabled_marker_for_ultrimater_only(self):
+    def test_turning_it_on_again_clears_windows_disabled_marker_for_panzeron_only(self):
         reg = FakeReg(); autostart.set_enabled(True, reg)
         reg.disable_in_task_manager(); reg.disable_in_task_manager("SomethingElse")
         st = autostart.set_enabled(True, reg)
         self.assertTrue(st["enabled"]); self.assertFalse(st["blocked_by_windows"])
-        self.assertNotIn("Ultrimater", reg.keys[autostart.APPROVED_KEY])
+        self.assertNotIn("Panzeron", reg.keys[autostart.APPROVED_KEY])
         self.assertIn("SomethingElse", reg.keys[autostart.APPROVED_KEY])       # another app's switch is never touched
 
     def test_enabled_marker_values_do_not_count_as_disabled(self):
         reg = FakeReg(); autostart.set_enabled(True, reg)
         for first_byte in (2, 6):                                              # Windows' "enabled" encodings
-            reg.keys[autostart.APPROVED_KEY] = {"Ultrimater": bytes([first_byte]) + bytes(11)}
+            reg.keys[autostart.APPROVED_KEY] = {"Panzeron": bytes([first_byte]) + bytes(11)}
             self.assertTrue(autostart.status(reg)["enabled"], first_byte)
 
     def test_entry_pointing_somewhere_else_is_flagged_as_not_current(self):
         reg = FakeReg(); autostart.set_enabled(True, reg)
-        reg.keys[autostart.RUN_KEY]["Ultrimater"] = '"C:\\Old Place\\pythonw.exe" "C:\\Old Place\\Ultrimater.pyw"'
+        reg.keys[autostart.RUN_KEY]["Panzeron"] = '"C:\\Old Place\\pythonw.exe" "C:\\Old Place\\Panzeron.pyw"'
         st = autostart.status(reg)
         self.assertTrue(st["enabled"]); self.assertFalse(st["current"])        # the UI tells the user to switch it off and on to repair it
 
     def test_comparison_ignores_letter_case_of_the_path(self):
         reg = FakeReg(); autostart.set_enabled(True, reg)
-        reg.keys[autostart.RUN_KEY]["Ultrimater"] = reg.keys[autostart.RUN_KEY]["Ultrimater"].upper()
+        reg.keys[autostart.RUN_KEY]["Panzeron"] = reg.keys[autostart.RUN_KEY]["Panzeron"].upper()
         self.assertTrue(autostart.status(reg)["current"])                      # Windows paths are case-insensitive
 
 

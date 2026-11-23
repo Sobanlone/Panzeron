@@ -1,14 +1,14 @@
 import base64, hashlib, io, json, os, struct, tempfile, threading, time, unittest, urllib.error, urllib.request, zipfile
 from pathlib import Path
 from unittest import mock
-from ultrimater.api.server import create_server
-from ultrimater.shield import containers, scopes, startup
-from ultrimater.shield.hashlists import parse as parse_hashes
-from ultrimater.shield.quarantine import ConfirmationRequired, ConsentRequired
-from ultrimater.shield.rules import load_user_rules
-from ultrimater.shield.scanner import (CHUNK, EICAR, ULTRIMATER_MARKER, Scanner, decode_encoded_commands, inspect_content)
-from ultrimater.shield.watcher import FolderWatcher
-from ultrimater.core import picker
+from panzeron.api.server import create_server
+from panzeron.shield import containers, scopes, startup
+from panzeron.shield.hashlists import parse as parse_hashes
+from panzeron.shield.quarantine import ConfirmationRequired, ConsentRequired
+from panzeron.shield.rules import load_user_rules
+from panzeron.shield.scanner import (CHUNK, EICAR, PANZERON_MARKER, Scanner, decode_encoded_commands, inspect_content)
+from panzeron.shield.watcher import FolderWatcher
+from panzeron.core import picker
 from tests.helpers import SALT, new_app
 
 
@@ -58,7 +58,7 @@ def titles(name, data): return [f.title for f in findings(name, data)]
 
 class PEImportTests(unittest.TestCase):
     def test_import_table_is_parsed(self):
-        from ultrimater.shield import pe
+        from panzeron.shield import pe
         info = pe.parse(build_pe({"kernel32.dll": ["CreateFileW", "ReadFile"], "user32.dll": ["MessageBoxW"]}))
         self.assertEqual(info.imports, {"kernel32.dll": ["CreateFileW", "ReadFile"], "user32.dll": ["MessageBoxW"]})
 
@@ -133,7 +133,7 @@ class ContainerTests(unittest.TestCase):
         self.assertEqual([f.title for f in fs], ["Program hidden inside archive as a document"]); self.assertEqual(fs[0].tier.value, "verified")
 
     def test_signature_inside_nested_archive(self):
-        inner = self.zip_bytes({"payload.txt": ULTRIMATER_MARKER})
+        inner = self.zip_bytes({"payload.txt": PANZERON_MARKER})
         fs = self.inspect(self.zip_bytes({"inner.zip": inner}))
         self.assertTrue(any("inside archive" in f.title for f in fs))
 
@@ -168,8 +168,8 @@ class ContainerTests(unittest.TestCase):
 class SmartVsDeepTests(unittest.TestCase):
     def test_smart_quick_inspects_big_media_but_reads_risky_types_fully(self):
         d = Path(tempfile.mkdtemp()); blob = b"A" * (400 * 1024)
-        (d / "movie.mp4").write_bytes(blob + ULTRIMATER_MARKER)          # marker deep inside a big non-risky file
-        (d / "big_script.ps1").write_bytes(blob + ULTRIMATER_MARKER)
+        (d / "movie.mp4").write_bytes(blob + PANZERON_MARKER)          # marker deep inside a big non-risky file
+        (d / "big_script.ps1").write_bytes(blob + PANZERON_MARKER)
         smart, fs_s = Scanner(SALT, mode="smart").scan(str(d)); deep, fs_d = Scanner(SALT, mode="deep").scan(str(d))
         self.assertEqual((smart.files_quick, smart.files_full), (1, 1)); self.assertEqual(len(fs_s), 1)
         self.assertEqual(len(fs_d), 2); self.assertEqual(deep.files_quick, 0)
@@ -177,12 +177,12 @@ class SmartVsDeepTests(unittest.TestCase):
     def test_threaded_scan_is_complete_and_correct(self):
         d = Path(tempfile.mkdtemp())
         for i in range(400): (d / f"f{i}.txt").write_text(f"file {i}")
-        for i in range(5): (d / f"bad{i}.txt").write_bytes(ULTRIMATER_MARKER)
+        for i in range(5): (d / f"bad{i}.txt").write_bytes(PANZERON_MARKER)
         res, fs = Scanner(SALT, workers=4).scan(str(d))
         self.assertEqual((res.files_scanned, len(fs), res.verdict, res.enumerating), (405, 5, "test", False))   # harmless test files are not a danger
 
     def test_skip_patterns_and_coverage_reporting(self):
-        d = Path(tempfile.mkdtemp()); (d / "skipme").mkdir(); (d / "skipme" / "x.txt").write_bytes(ULTRIMATER_MARKER); (d / "ok.txt").write_text("fine")
+        d = Path(tempfile.mkdtemp()); (d / "skipme").mkdir(); (d / "skipme" / "x.txt").write_bytes(PANZERON_MARKER); (d / "ok.txt").write_text("fine")
         res, fs = Scanner(SALT).scan(str(d), skip=[("/skipme/", "test reason")])
         self.assertEqual((res.files_scanned, len(fs)), (1, 0)); self.assertEqual(res.skipped_dirs[0]["reason"], "test reason"); self.assertEqual(res.verdict, "clean")
 
@@ -202,7 +202,7 @@ class SmartVsDeepTests(unittest.TestCase):
 
 class ConsentTests(unittest.TestCase):
     def setUp(self):
-        self.app = new_app(); self.d = Path(tempfile.mkdtemp()); (self.d / "m.txt").write_bytes(ULTRIMATER_MARKER)
+        self.app = new_app(); self.d = Path(tempfile.mkdtemp()); (self.d / "m.txt").write_bytes(PANZERON_MARKER)
         self.plan = scopes.ScopePlan("quick", "Quick scan", [self.d], [], True, "x", "y")
 
     def wait(self, sid):
@@ -291,13 +291,13 @@ class StartupTests(unittest.TestCase):
 
 class WatcherTests(unittest.TestCase):
     def test_only_new_stable_files_are_scanned(self):
-        d = Path(tempfile.mkdtemp()); (d / "old.txt").write_bytes(ULTRIMATER_MARKER)       # pre-existing: NOT scanned by the watcher
+        d = Path(tempfile.mkdtemp()); (d / "old.txt").write_bytes(PANZERON_MARKER)       # pre-existing: NOT scanned by the watcher
         seen, found = [], []
         sc = Scanner(SALT)
         w = FolderWatcher(lambda p: (seen.append(p.name), sc.scan_file(p)[0])[1], lambda p, f: found.append(p.name), poll=0.1); w.start([d])
         try:
             time.sleep(0.3)
-            (d / "new.txt").write_bytes(ULTRIMATER_MARKER); (d / "clean.txt").write_text("hello"); (d / "movie.crdownload").write_bytes(ULTRIMATER_MARKER)
+            (d / "new.txt").write_bytes(PANZERON_MARKER); (d / "clean.txt").write_text("hello"); (d / "movie.crdownload").write_bytes(PANZERON_MARKER)
             for _ in range(40):
                 if "new.txt" in found and "clean.txt" in seen: break
                 time.sleep(0.1)
@@ -322,13 +322,13 @@ class WatcherTests(unittest.TestCase):
         self.assertIn(str(d), c.exception.details["roots"]); self.assertFalse(app.watcher.running)
         app.watcher.poll = 0.1; st = app.set_watcher(True, [str(d)], consent=True); self.assertTrue(st["running"])
         self.assertTrue(any(e["event"] == "watcher.enabled" for e in app.audit.entries()))
-        (d / "evil.txt").write_bytes(ULTRIMATER_MARKER)
+        (d / "evil.txt").write_bytes(PANZERON_MARKER)
         for _ in range(40):
             if app.db.list_findings(module="shield"): break
             time.sleep(0.1)
         self.assertEqual(app.db.list_findings(module="shield")[0].category, "shield.signature")
-        app.watcher.stop(); from ultrimater.app import UltrimaterApp
-        again = UltrimaterApp(app.paths.home); self.assertTrue(again.watcher.running); again.watcher.stop()   # restarts only because consent was recorded
+        app.watcher.stop(); from panzeron.app import PanzeronApp
+        again = PanzeronApp(app.paths.home); self.assertTrue(again.watcher.running); again.watcher.stop()   # restarts only because consent was recorded
         again.set_watcher(False); self.assertFalse(again.watcher_status()["enabled"])
 
     def test_watcher_enable_cannot_be_smuggled_through_generic_settings(self):
@@ -338,7 +338,7 @@ class WatcherTests(unittest.TestCase):
 class BulkQuarantineTests(unittest.TestCase):
     def test_bulk_requires_confirmation_then_moves_all_and_is_reversible(self):
         app = new_app(); d = Path(tempfile.mkdtemp())
-        for i in range(3): (d / f"m{i}.txt").write_bytes(ULTRIMATER_MARKER)
+        for i in range(3): (d / f"m{i}.txt").write_bytes(PANZERON_MARKER)
         res, fs = app._make_scanner().scan(str(d))
         for f in fs: app.db.save_finding(f)
         ids = [f.id for f in fs]

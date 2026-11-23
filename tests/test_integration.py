@@ -1,11 +1,11 @@
 import json, tempfile, threading, time, unittest, urllib.error, urllib.request
 from pathlib import Path
-from ultrimater import demo
-from ultrimater.api.server import create_server
-from ultrimater.core.models import Module
-from ultrimater.inference.engine import run_inference
-from ultrimater.shield.quarantine import ConfirmationRequired
-from ultrimater.response.service import ActionError
+from panzeron import demo
+from panzeron.api.server import create_server
+from panzeron.core.models import Module
+from panzeron.inference.engine import run_inference
+from panzeron.shield.quarantine import ConfirmationRequired
+from panzeron.response.service import ActionError
 from tests.helpers import new_app
 
 
@@ -59,8 +59,8 @@ class InferenceTests(unittest.TestCase):
 class ResponseTests(unittest.TestCase):
     def setUp(self):
         self.app = new_app(); self.d = Path(tempfile.mkdtemp())
-        from ultrimater.shield.scanner import ULTRIMATER_MARKER
-        self.f = self.d / "marker.txt"; self.f.write_bytes(ULTRIMATER_MARKER)
+        from panzeron.shield.scanner import PANZERON_MARKER
+        self.f = self.d / "marker.txt"; self.f.write_bytes(PANZERON_MARKER)
         wait_scan(self.app, self.app.start_scan(str(self.d))["scan_id"])
         self.finding = self.app.db.list_findings(module="shield")[0]
 
@@ -128,7 +128,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(s, 200); self.assertEqual(r["source"], "evil name.txt"); self.assertTrue(any(f["category"] == "pii.email" for f in r["findings"]))
 
     def test_confirmation_flow_over_http(self):
-        d = Path(tempfile.mkdtemp()); (d / "m.txt").write_bytes(b"ULTRIMATER-TEST-MARKER-HARMLESS-V1")
+        d = Path(tempfile.mkdtemp()); (d / "m.txt").write_bytes(b"PANZERON-TEST-MARKER-HARMLESS-V1")
         sid = self.call("POST", "/api/scan", {"path": str(d)})[1]["scan_id"]; wait_scan(self.app, sid)
         fid = self.call("GET", "/api/findings?module=shield")[1]["findings"][0]["id"]
         s, r = self.call("POST", f"/api/findings/{fid}/action", {"type": "quarantine_file"}); self.assertEqual((s, r["error"]), (409, "confirmation_required"))

@@ -1,6 +1,6 @@
 import json, threading, unittest, urllib.parse, urllib.request
-from ultrimater.api.server import create_server
-from ultrimater.core.models import Confidence, Evidence, EvidenceTier, Finding, Module, Severity
+from panzeron.api.server import create_server
+from panzeron.core.models import Confidence, Evidence, EvidenceTier, Finding, Module, Severity
 from tests.helpers import new_app
 
 SEVS = [Severity.INFO, Severity.LOW, Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL]

@@ -1,7 +1,7 @@
-"""Regenerates ultrimater/web/img/dragon.png from assets/dragon-source.png (requires Pillow + NumPy).
+"""Regenerates panzeron/web/img/dragon.png from assets/dragon-source.png (requires Pillow + NumPy).
 
 The source is a flat red dragon on white. The web UI needs it as a *mask*: a white silhouette whose alpha channel is the
-dragon's shape, so CSS can paint it in the user's accent colour (see .bo-dragon in ultrimater/web/css/app.css).
+dragon's shape, so CSS can paint it in the user's accent colour (see .bo-dragon in panzeron/web/css/app.css).
 Usage: python assets/make_dragon.py            (run from the project folder)
 """
 from pathlib import Path
@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC, OUT = ROOT / "assets" / "dragon-source.png", ROOT / "ultrimater" / "web" / "img" / "dragon.png"
+SRC, OUT = ROOT / "assets" / "dragon-source.png", ROOT / "panzeron" / "web" / "img" / "dragon.png"
 LONG_SIDE = 640          # shown at roughly 80 px (so 160 px on a 2x display); 640 stays crisp when scaled up in the settings preview
 
 rgb = np.asarray(Image.open(SRC).convert("RGB")).astype(float)

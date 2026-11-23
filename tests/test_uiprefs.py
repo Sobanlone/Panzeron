@@ -1,6 +1,6 @@
 import json, threading, unittest, urllib.request, urllib.error
-from ultrimater.api.server import create_server
-from ultrimater.core.uiprefs import DEFAULTS, sanitize
+from panzeron.api.server import create_server
+from panzeron.core.uiprefs import DEFAULTS, sanitize
 from tests.helpers import new_app
 
 
@@ -56,5 +56,5 @@ class PrefsApiTests(unittest.TestCase):
         self.call("DELETE"); self.assertIsNone(self.call("GET")["prefs"])
 
     def test_survives_restart(self):
-        self.app.set_ui_prefs({"bg": "crimson"}); from ultrimater.app import UltrimaterApp
-        again = UltrimaterApp(self.app.paths.home); self.assertEqual(again.get_ui_prefs()["bg"], "crimson")
+        self.app.set_ui_prefs({"bg": "crimson"}); from panzeron.app import PanzeronApp
+        again = PanzeronApp(self.app.paths.home); self.assertEqual(again.get_ui_prefs()["bg"], "crimson")

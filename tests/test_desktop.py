@@ -1,8 +1,8 @@
 import subprocess, sys, tempfile, threading, time, unittest, urllib.error, urllib.request
 from pathlib import Path
 from unittest import mock
-from ultrimater import desktop
-from ultrimater.core.config import Paths
+from panzeron import desktop
+from panzeron.core.config import Paths
 
 
 def stub_window(seconds):
@@ -26,7 +26,7 @@ class DesktopTests(unittest.TestCase):
             seen["url"] = url; seen["body"] = urllib.request.urlopen(url).read().decode()   # engine is up while the window is open
             return stub_window(0.4)(url, profile)
         self.assertEqual(desktop.run(launch=launch, home=home, port=0), 0)
-        self.assertIn("ultrimater", seen["body"].lower())
+        self.assertIn("panzeron", seen["body"].lower())
         with self.assertRaises(urllib.error.URLError): urllib.request.urlopen(seen["url"], timeout=1)   # engine stopped
         self.assertFalse((home / "instance.json").exists())
 
@@ -55,4 +55,4 @@ class DesktopTests(unittest.TestCase):
     def test_packaged_web_assets_exist(self):
         web = Path(desktop.__file__).parent / "web"
         for f in ("index.html", "favicon.png", "js/app.js", "css/app.css"): self.assertTrue((web / f).is_file(), f)
-        self.assertTrue((Path(desktop.__file__).parent.parent / "assets" / "ultrimater.ico").is_file())
+        self.assertTrue((Path(desktop.__file__).parent.parent / "assets" / "panzeron.ico").is_file())

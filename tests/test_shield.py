@@ -1,8 +1,8 @@
 import tempfile, unittest, hashlib
 from pathlib import Path
-from ultrimater.shield.scanner import *
-from ultrimater.shield.quarantine import QuarantineVault, ConfirmationRequired, QuarantineError
-from ultrimater.shield import defender
+from panzeron.shield.scanner import *
+from panzeron.shield.quarantine import QuarantineVault, ConfirmationRequired, QuarantineError
+from panzeron.shield import defender
 from tests.helpers import SALT, new_app
 
 
@@ -44,8 +44,8 @@ class ShieldTests(unittest.TestCase):
 
     def test_scan_directory_exclusions_and_errors(self):
         d = Path(tempfile.mkdtemp())
-        (d / "bad.txt").write_bytes(b"x " + ULTRIMATER_MARKER); (d / "ok.txt").write_text("fine")
-        (d / "skip.txt").write_bytes(ULTRIMATER_MARKER)
+        (d / "bad.txt").write_bytes(b"x " + PANZERON_MARKER); (d / "ok.txt").write_text("fine")
+        (d / "skip.txt").write_bytes(PANZERON_MARKER)
         res, fs = Scanner(SALT).scan(str(d)); self.assertEqual((res.files_scanned, len(fs)), (3, 2))
         ex = [{"kind": "path", "pattern": str(d / "skip.txt")}]
         res, fs = Scanner(SALT, ex).scan(str(d)); self.assertEqual((res.files_excluded, len(fs)), (1, 1))
@@ -54,12 +54,12 @@ class ShieldTests(unittest.TestCase):
 
     def test_signature_across_chunk_boundary(self):
         d = Path(tempfile.mkdtemp()); p = d / "big.bin"
-        p.write_bytes(b"A" * (CHUNK - 10) + ULTRIMATER_MARKER + b"B" * 100)
+        p.write_bytes(b"A" * (CHUNK - 10) + PANZERON_MARKER + b"B" * 100)
         self.assertEqual(len(Scanner(SALT).scan(str(p))[1]), 1)
 
     def test_hash_exclusion(self):
-        d = Path(tempfile.mkdtemp()); p = d / "a.txt"; p.write_bytes(ULTRIMATER_MARKER)
-        h = hashlib.sha256(ULTRIMATER_MARKER).hexdigest()
+        d = Path(tempfile.mkdtemp()); p = d / "a.txt"; p.write_bytes(PANZERON_MARKER)
+        h = hashlib.sha256(PANZERON_MARKER).hexdigest()
         self.assertEqual(Scanner(SALT, [{"kind": "hash", "pattern": h}]).scan(str(d))[0].files_excluded, 1)
 
 

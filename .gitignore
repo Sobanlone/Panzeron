@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-.ultrimater/
+.panzeron/
 *.db
 secret.key
 gmail.secret

@@ -8,7 +8,7 @@ Legend: ✅ implemented and tested here · 🟡 implemented, only partly verifia
 | SQLite store, settings, exclusions | ✅ | unit + API tests |
 | Hash-chained audit log + tamper detection | ✅ | unit test (tamper → detected at the right row) |
 | Shield: threaded scan, smart/deep modes, signatures, imported hash lists, PE import analysis, decoded PowerShell payloads, rule engine, ZIP/Office/OLE inspection | ✅ | ~40 unit tests incl. a real crafted PE with import table, real archives, false-positive traps |
-| Shield: calibrated danger levels (test-file spec, ruleset-likeness, precision caps, corroboration), hash-manifest self-trust, tamper detection, trust-by-hash, scan cache | ✅ | 25 tests incl. scanning a copy of the real project (clean with its manifest, flagged without it) and a browser test that scans Ultrimater's folder through the UI |
+| Shield: calibrated danger levels (test-file spec, ruleset-likeness, precision caps, corroboration), hash-manifest self-trust, tamper detection, trust-by-hash, scan cache | ✅ | 25 tests incl. scanning a copy of the real project (clean with its manifest, flagged without it) and a browser test that scans Panzeron's folder through the UI |
 | Shield: scopes + permission model (engine-enforced, audited), bulk quarantine, coverage reports | ✅ | unit + HTTP + browser tests, including declining permission |
 | Shield: Downloads watcher (user-space), startup/hosts review | ✅/🟡 | watcher tested live (new-file, growing-file, consent, restart); registry/hosts reading is Windows-only and tested with injected data |
 | Native file/folder dialogs | 🟡 | engine, API and UI tested with a stand-in dialog and the unavailable-fallback; **the real Windows dialog could not be opened in the Linux build environment** |
@@ -23,7 +23,7 @@ Legend: ✅ implemented and tested here · 🟡 implemented, only partly verifia
 | API security (token, Host, CSP, limits, traversal, keep-alive bodies) | ✅ | API tests; keep-alive bug found and fixed by browser test |
 | UI: 8 pages, minimal royal liquid glass, sharp corners, no purple, graph, confirmations, safe rendering | ✅ | real Chromium test: every element has square corners and no purple on every page visited; static design-rule tests |
 | Desktop shell: app window, single instance, close = quit, clear error if no Edge/Chrome | ✅ | 7 lifecycle tests with a stub window |
-| Packaging: PyInstaller `.exe` + Inno Setup installer (local script + GitHub Actions cloud build) | 🟡 | scripts written (`build_windows.bat`, `installer/ultrimater.iss`); **could not be built in the Linux environment, first run must happen on Windows** |
+| Packaging: PyInstaller `.exe` + Inno Setup installer (local script + GitHub Actions cloud build) | 🟡 | scripts written (`build_windows.bat`, `installer/panzeron.iss`); **could not be built in the Linux environment, first run must happen on Windows** |
 | Responsiveness: background-cached probes, single-flight, skeleton-first navigation, request timeouts, auto lite-glass on slow GPUs | ✅ | 7 perf tests + browser test with a simulated 4 s Defender: tab switches 54-244 ms |
 | Appearance customisation: 10 themes, accent/background/glass/layout/type controls, live apply, persistence (browser + engine), import/export/reset, strict validation | ✅ | 7 schema/API unit tests + 18 browser checks driving the real controls |
 | Light mode, radar/HUD/grid/donut/glow effects, purple palette | removed by design | tested absent |
