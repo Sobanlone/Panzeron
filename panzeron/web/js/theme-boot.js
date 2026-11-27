@@ -4,6 +4,8 @@
 // intro still appears, but as a calm still splash with no movement, so the startup never just silently does nothing.
 (function () {
   var root = document.documentElement;
+  // One-time carry-over of the choices saved under the app's former name (Ultrimater), so the theme and settings survive the rename.
+  try { ["theme", "prefs", "intro", "fx-auto", "fx-force"].forEach(function (k) { var v = localStorage.getItem("ultrimater-" + k); if (v !== null && localStorage.getItem("panzeron-" + k) === null) localStorage.setItem("panzeron-" + k, v); }); } catch (e) { /* storage unavailable */ }
   try { if (localStorage.getItem("panzeron-theme") === "light") root.dataset.theme = "light"; } catch (e) { /* storage unavailable */ }
   try {
     var animOff = false;

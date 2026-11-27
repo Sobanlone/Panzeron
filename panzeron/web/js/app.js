@@ -2,6 +2,7 @@ import { api } from './api.js';
 import { clear, h, icon, skeleton, toast } from './ui.js';
 import { appearance } from './appearance.js';
 import { runBoot } from './boot.js';
+import { installSfx } from './sfx.js';
 import * as command from './pages/command.js';
 import * as shield from './pages/shield.js';
 import * as privacy from './pages/privacy.js';
@@ -14,6 +15,7 @@ import * as settings from './pages/settings.js';
 // The startup intro is painted in the user's accent colour, so the appearance variables are applied first. It is started before
 // anything else in this file that could fail, so a later error can never leave the intro on screen.
 appearance.init();
+installSfx();
 const intro = runBoot();
 
 const ROUTES = [   // [id, friendly name, page, nav icon, one-line description shown under the title]

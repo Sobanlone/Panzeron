@@ -23,8 +23,15 @@ export function buildGmailCard(ctx, alive, onNewCheck = () => {}) {
     return h('div', {},
       h('p', { class: 'small muted', style: { margin: '10px 0' } }, 'Panzeron can screen your inbox for phishing, read-only. You sign in on Google’s own page, and you create your own free Google client ID so the permission is between you and Google.'),
       h('details', { style: { margin: '8px 0 12px' } }, h('summary', { class: 'small muted' }, 'How to get a client ID (about 3 minutes)'), h('ol', { class: 'small muted', style: { margin: '8px 0 0 18px' } }, s.setup_steps.map((t) => h('li', { style: { margin: '4px 0' } }, t)))),
+      h('div', { class: 'notice info', style: { marginBottom: '12px' } }, 'Already downloaded the JSON file from Google? Choose it here. It is read on this computer only.'),
+      h('input', { type: 'file', accept: '.json,application/json', id: 'gm-json', style: { display: 'none' }, onchange: async (e) => {
+        const f = e.target.files[0]; if (!f) return;
+        try { await api.post('/api/gmail', { action: 'import_json', json_text: await f.text() }); toast('Google client file imported'); paint(); } catch (err) { toast(err.message, true); }
+        e.target.value = ''; } }),
+      h('button', { class: 'primary block', style: { marginBottom: '14px' }, onclick: () => document.getElementById('gm-json').click() }, 'Import the Google JSON file…'),
+      h('div', { class: 'small faint', style: { margin: '2px 0 8px' } }, 'Or type the details yourself:'),
       h('label', { class: 'field' }, 'Client ID', id), h('label', { class: 'field' }, 'Client secret', secret),
-      h('button', { class: 'primary block', onclick: async () => { try { await api.post('/api/gmail', { action: 'configure', client_id: id.value, client_secret: secret.value }); paint(); } catch (e) { toast(e.message, true); } } }, 'Save'));
+      h('button', { class: 'block', onclick: async () => { try { await api.post('/api/gmail', { action: 'configure', client_id: id.value, client_secret: secret.value }); paint(); } catch (e) { toast(e.message, true); } } }, 'Save'));
   }
 
   function ready(s) {

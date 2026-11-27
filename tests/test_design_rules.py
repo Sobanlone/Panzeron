@@ -27,13 +27,14 @@ class DesignRuleTests(unittest.TestCase):
         self.assertRegex(flat, r"button,\.btn\{[^}]*border-radius:var\(--r-pill\)")
         self.assertRegex(flat, r"\.pill\{[^}]*border-radius:var\(--r-pill\)")
         for f in (WEB / "js").rglob("*.js"):
-            t = f.read_text(encoding="utf-8")
+            t = f.read_text()
             self.assertNotRegex(t, r"borderRadius|border-radius", f.name)             # shape lives in CSS only
 
-    def test_background_uses_blue_violet_teal_crimson_light(self):
+    def test_background_uses_accent_tinted_light_field(self):
         css = (WEB / "css" / "app.css").read_text()
         for orb in ("--orb-a", "--orb-b", "--orb-c", "--orb-d"):
             self.assertRegex(css, orb + r":rgba\(")
+        self.assertIn("rgba(var(--accent-rgb)", css)
         self.assertIn("backdrop-filter", css)
 
     def test_no_decorative_effects_remain(self):
@@ -59,17 +60,17 @@ class DesignRuleTests(unittest.TestCase):
         self.assertNotIn("<script>", html)
         self.assertIn("backdrop-filter:url(#lg-refract)", (WEB / "css" / "app.css").read_text().replace(" ", "").replace("(backdrop-filter:", "(backdrop-filter:"))
 
-    def test_startup_matrix_dragon_orbits_the_orb(self):
+    def test_startup_dragon_follows_the_accent_and_orbits_the_orb(self):
         css = (WEB / "css" / "app.css").read_text(); html = (WEB / "index.html").read_text()
-        matrix = (WEB / "img" / "matrix-dragon.jpg").read_bytes()
-        self.assertTrue(matrix.startswith(b"\xff\xd8"))
-        self.assertIn("matrix-dragon", html)
-        self.assertIn("matrix-dragon.jpg", (WEB / "js" / "boot.js").read_text())
-        for cls in ("boot-orbit", "matrix-dragon"):
+        png = (WEB / "img" / "dragon.png").read_bytes()
+        self.assertTrue(png.startswith(b"\x89PNG")); self.assertEqual(png[25], 6)                 # colour type 6 = RGBA: the alpha channel is the shape
+        self.assertIn("url(/img/dragon.png)", css)
+        block = css[css.index(".bo-dragon{"):css.index(".bo-glow{")]
+        self.assertIn("var(--accent", block); self.assertNotRegex(block, r"#(?:d|e)[0-9a-f]{5}\b")  # coloured by the accent variables, not a fixed red
+        for cls in ("boot-orbit", "bo-x", "bo-y", "bo-turn", "bo-dragon"):
             self.assertIn(cls, html, cls)
-        run = (WEB / "js" / "dragon.js").read_text(encoding="utf-8")
-        self.assertIn("orbitAround", run)
-        self.assertIn("translate(", run)
+        for kf in ("bo-x", "bo-y", "bo-depth", "bo-turn"):
+            self.assertIn(f"@keyframes {kf}", css, kf)
 
     def test_startup_cannot_trap_the_user(self):
         boot = (WEB / "js" / "theme-boot.js").read_text(); run = (WEB / "js" / "boot.js").read_text(); app = (WEB / "js" / "app.js").read_text()
@@ -86,6 +87,6 @@ class DesignRuleTests(unittest.TestCase):
 
     def test_no_invented_claims_in_ui_text(self):
         banned = ["reviews", "testimonial", "trusted by", "users worldwide", "★", "99.9", "million", "award"]
-        blob = "\n".join(f.read_text(encoding="utf-8").lower() for f in (WEB / "js").rglob("*.js")) + (WEB / "index.html").read_text(encoding="utf-8").lower()
+        blob = "\n".join(f.read_text().lower() for f in (WEB / "js").rglob("*.js")) + (WEB / "index.html").read_text().lower()
         for w in banned:
             self.assertNotIn(w.lower(), blob, w)

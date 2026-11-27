@@ -21,7 +21,7 @@ jobs:
         continue-on-error: true
         run: python -m unittest discover -s tests -t .
       - name: Build Panzeron.exe
-        run: pyinstaller --noconfirm --clean --windowed --name Panzeron --icon assets/panzeron.ico --collect-submodules panzeron --add-data "panzeron/web;panzeron/web" panzeron_app.py
+        run: pyinstaller --noconfirm --clean --windowed --name Panzeron --icon assets/panzeron.ico --collect-submodules panzeron --add-data "panzeron/web;panzeron/web" --add-data "assets/panzeron.ico;assets" panzeron_app.py
       - name: Write the integrity manifest (lets Panzeron recognise its own files by hash)
         run: python scripts/make_manifest.py dist/Panzeron
       - name: Portable zip

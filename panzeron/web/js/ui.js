@@ -40,8 +40,11 @@ export function fmtTime(iso) {
 export const fmtBytes = (n) => n == null ? '—' : n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`;
 
 export function toast(msg, isErr = false) {
+  const box = document.getElementById('toasts');
+  const same = [...box.children].find((el) => el.textContent === msg);       // the same message twice in a row replaces itself instead of stacking
+  if (same) same.remove();
   const t = h('div', { class: `toast${isErr ? ' err' : ''}` }, msg);
-  document.getElementById('toasts').append(t);
+  box.append(t);
   setTimeout(() => t.remove(), isErr ? 7000 : 3800);
 }
 

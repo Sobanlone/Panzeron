@@ -8,6 +8,9 @@ class SanitizeTests(unittest.TestCase):
     def test_valid_values_pass_and_defaults_fill_the_rest(self):
         c, rej = sanitize({"accent": "#C9A45C", "blur": 12, "anim": False, "sheen": False})
         self.assertEqual((c["accent"], c["blur"], c["anim"], c["sheen"], c["bg"]), ("#c9a45c", 12, False, False, DEFAULTS["bg"])); self.assertEqual(rej, [])
+        self.assertTrue(DEFAULTS["sound"])
+        self.assertFalse(sanitize({"sound": False})[0]["sound"])
+        self.assertIn("sound", sanitize({"sound": "on"})[1])
 
     def test_css_injection_through_colour_is_rejected(self):
         for bad in ("red;background:url(//evil)", "#12345", "#gggggg", "rgb(1,2,3)", "#0a84ff;}body{display:none", 5, None, "javascript:alert(1)"):
@@ -49,9 +52,10 @@ class PrefsApiTests(unittest.TestCase):
 
     def test_roundtrip_persist_and_reset(self):
         self.assertIsNone(self.call("GET")["prefs"])
-        out = self.call("PUT", {"accent": "#2fb872", "density": "compact", "evil": "x"})
+        out = self.call("PUT", {"accent": "#2fb872", "density": "compact", "sound": False, "evil": "x"})
         self.assertEqual(out["rejected"], ["evil"]); self.assertEqual(self.call("GET")["prefs"]["accent"], "#2fb872")
         self.assertEqual(self.call("GET")["prefs"]["density"], "compact")
+        self.assertFalse(self.call("GET")["prefs"]["sound"])
         self.assertEqual(self.call("GET")["defaults"], DEFAULTS)
         self.call("DELETE"); self.assertIsNone(self.call("GET")["prefs"])
 

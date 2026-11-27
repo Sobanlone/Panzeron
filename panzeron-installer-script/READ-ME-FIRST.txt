@@ -1,0 +1,10 @@
+Panzeron installer script (Inno Setup)
+
+1. Unzip this INTO your Panzeron project folder (the one that contains build_windows.bat).
+   It puts the file at  installer\panzeron.iss  and replaces the older one there.
+2. Double-click build_windows.bat. It builds the program and then compiles the installer.
+   Or open installer\panzeron.iss in "Inno Setup Compiler" and press Compile (F9), after build_windows.bat has run once.
+3. Your installer appears at  installer\Output\Panzeron-Setup-0.1.0.exe
+
+If a browser ever saves it as "panzeron.iss.txt": in File Explorer choose View > Show > File name extensions,
+then rename it to panzeron.iss (delete the .txt part).

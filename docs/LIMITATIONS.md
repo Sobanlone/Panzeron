@@ -69,3 +69,8 @@
 * Screening is rule-based (look-alike senders, Reply-To mismatch, failed SPF/DKIM/DMARC, urgent credential/payment language, risky links); it will miss well-written scams and can flag odd but harmless mail.
 * The refresh token is encrypted with Windows DPAPI; on other platforms it is only encoded and protected by file permissions.
 * Only the inbox is checked (last 7 days at first, then new mail, up to 100 messages per check). Spam, other labels and attachments are not read.
+
+## Theme background effects
+
+* The effects sit *behind* the frosted-glass cards, so on a page full of cards they show mostly at the edges and in gaps. Lower the glass blur/opacity in Settings to see more of them through the cards. Panzeron does not change your blur setting for you.
+* They cost a little graphics power. Turn off "Animations & theme effects", or pick the Solid theme, on a slow machine. Tested in headless Chromium only; frame rates on real hardware were not measured.

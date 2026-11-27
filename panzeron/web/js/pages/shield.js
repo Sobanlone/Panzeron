@@ -4,6 +4,7 @@ import { runAction } from '../actions.js';
 import { segmented, toggle } from '../controls.js';
 import { pickPaths } from '../pick.js';
 import { buildBrowserCard } from './browser-card.js';
+import { playSfx } from '../sfx.js';
 
 const VERDICT = {
   threats: ['Threats found', 'Findings need your attention. Nothing was changed.'],
@@ -27,6 +28,7 @@ export async function render(view, ctx, alive) {
   async function start(opts, consent = false) {
     try {
       const { scan_id } = await api.post('/api/scan', { ...opts, mode, consent });
+      playSfx('scan');
       watchScan(scan_id);
     } catch (e) {
       if (e instanceof ApiError && e.status === 409 && e.body.details) {          // the engine asks for permission; show exactly what will be read

@@ -10,6 +10,7 @@ if (-not $pyw -or -not (Test-Path $pyw)) { Write-Host "Python 3.11+ was not foun
 $ws = New-Object -ComObject WScript.Shell
 $targets = @([Environment]::GetFolderPath('Desktop'), (Join-Path ([Environment]::GetFolderPath('Programs')) ''))
 foreach ($dir in $targets) {
+  Remove-Item -ErrorAction SilentlyContinue (Join-Path $dir "Ultrimater.lnk")     # the old name
   $lnk = $ws.CreateShortcut((Join-Path $dir "Panzeron.lnk"))
   $lnk.TargetPath = $pyw
   $lnk.Arguments = "`"$root\Panzeron.pyw`""

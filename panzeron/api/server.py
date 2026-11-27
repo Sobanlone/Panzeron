@@ -213,7 +213,7 @@ def make_handler(app: PanzeronApp, token: str):
                     return app.set_watcher(b.get("enabled") is True, [str(x) for x in b.get("paths", [])][:10] if isinstance(b.get("paths"), list) else None, b.get("consent") is True)
                 if path == "/api/gmail":
                     b = self._json_body()
-                    return app.gmail_access(str(b.get("action", "")), str(b.get("client_id", ""))[:200], str(b.get("client_secret", ""))[:300], b.get("automatic") is not False, b.get("consent") is True)
+                    return app.gmail_access(str(b.get("action", "")), str(b.get("client_id", ""))[:200], str(b.get("client_secret", ""))[:300], b.get("automatic") is not False, b.get("consent") is True, str(b.get("json_text", ""))[:20001])
                 if path == "/api/browser":
                     b = self._json_body()
                     caps = [str(x) for x in b["caps"]][:8] if isinstance(b.get("caps"), list) else None

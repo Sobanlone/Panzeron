@@ -5,6 +5,11 @@ from panzeron import desktop
 from panzeron.core.config import Paths
 
 
+class UnavailableTray:
+    def start(self): return False
+    def stop(self): pass
+
+
 def stub_window(seconds):
     """Stands in for the Edge app window: stays 'open' for a while, then exits (= user closed the window)."""
     return lambda url, profile: subprocess.Popen([sys.executable, "-c", f"import time; time.sleep({seconds})"])
@@ -14,6 +19,7 @@ class DesktopTests(unittest.TestCase):
     def test_app_window_command_has_no_browser_chrome(self):
         cmd = desktop.build_command("msedge.exe", "http://127.0.0.1:1/", Path("p"))
         self.assertIn("--app=http://127.0.0.1:1/", cmd); self.assertTrue(any(c.startswith("--user-data-dir=") for c in cmd))
+        self.assertIn("--autoplay-policy=no-user-gesture-required", cmd)
 
     def test_edge_is_preferred_on_windows_paths(self):
         d = Path(tempfile.mkdtemp()); edge = d / "Microsoft" / "Edge" / "Application"; edge.mkdir(parents=True); (edge / "msedge.exe").write_text("")
@@ -25,7 +31,7 @@ class DesktopTests(unittest.TestCase):
         def launch(url, profile):
             seen["url"] = url; seen["body"] = urllib.request.urlopen(url).read().decode()   # engine is up while the window is open
             return stub_window(0.4)(url, profile)
-        self.assertEqual(desktop.run(launch=launch, home=home, port=0), 0)
+        self.assertEqual(desktop.run(launch=launch, home=home, port=0, tray_factory=lambda _open, _quit: UnavailableTray()), 0)
         self.assertIn("panzeron", seen["body"].lower())
         with self.assertRaises(urllib.error.URLError): urllib.request.urlopen(seen["url"], timeout=1)   # engine stopped
         self.assertFalse((home / "instance.json").exists())
@@ -33,12 +39,12 @@ class DesktopTests(unittest.TestCase):
     def test_second_launch_reuses_running_engine(self):
         home = Path(tempfile.mkdtemp()); urls = []
         def launch1(url, profile): urls.append(url); return stub_window(2.0)(url, profile)
-        t = threading.Thread(target=lambda: desktop.run(launch=launch1, home=home, port=0)); t.start()
+        t = threading.Thread(target=lambda: desktop.run(launch=launch1, home=home, port=0, tray_factory=lambda _open, _quit: UnavailableTray())); t.start()
         for _ in range(50):
             if urls: break
             time.sleep(0.05)
         second = []
-        rc = desktop.run(launch=lambda u, p: (second.append(u), stub_window(0.01)(u, p))[1], home=home, port=0)
+        rc = desktop.run(launch=lambda u, p: second.append(u), home=home, port=0)
         self.assertEqual(rc, 0); self.assertEqual(second, [urls[0]])      # same engine, not a new one
         t.join()
 

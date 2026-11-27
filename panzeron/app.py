@@ -21,6 +21,7 @@ from .core.log import get_logger
 from .core.uiprefs import DEFAULTS as UI_DEFAULTS, sanitize as sanitize_ui_prefs
 import json
 
+from . import autostart
 from .connectors.gmail import GmailGuard
 from .core.models import Finding, Module, new_id, now_iso
 from .inference.engine import FORMULA, run_inference
@@ -97,6 +98,10 @@ class PanzeronApp:
         self._ai.refresh()
         self.audit.append("system", "app.start", {"version": APP_VERSION})
         # Browser protection: reads nothing until the user allows it (see shield/browsers.py). Automatic checks restart only if they were allowed.
+        try:
+            autostart.migrate_legacy()                    # Windows only; a no-op everywhere else and when there is nothing to migrate
+        except Exception:
+            pass
         self.browser = BrowserGuard(self.db, self.audit, self.salt, self._watch_scan, self._sync_watcher)
         self.gmail = GmailGuard(self.db, self.audit, self.salt, self.paths.home)   # reads nothing until you connect it (connectors/gmail.py)
         if self.gmail.connected() and self.gmail._state().get("automatic"):
@@ -453,9 +458,11 @@ class PanzeronApp:
     def gmail_status(self) -> dict[str, Any]:
         return self.gmail.status()
 
-    def gmail_access(self, action: str, client_id: str = "", client_secret: str = "", automatic: bool = True, consent: bool = False) -> dict[str, Any]:
+    def gmail_access(self, action: str, client_id: str = "", client_secret: str = "", automatic: bool = True, consent: bool = False, json_text: str = "") -> dict[str, Any]:
         if action == "configure":
             return self.gmail.configure(client_id, client_secret)
+        if action == "import_json":
+            return self.gmail.configure_from_json(json_text)
         if action == "connect":
             return self.gmail.connect(automatic, consent)
         if action == "check":
@@ -467,7 +474,7 @@ class PanzeronApp:
             return self.gmail.disconnect()
         if action == "reset":
             return self.gmail.reset()
-        raise ValueError("action must be configure, connect, check, disconnect or reset")
+        raise ValueError("action must be configure, import_json, connect, check, disconnect or reset")
 
     # ---- search and bulk status changes (Response Centre at scale) ---------------------------------------
     def search_findings(self, **kw: Any) -> dict[str, Any]:

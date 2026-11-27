@@ -5,14 +5,14 @@ import { setBackgroundEffect } from './bgfx.js';
 
 export const DEFAULTS = {
   accent: '#4169e1', bg: 'royal', pureBlack: false, fx: 'auto', blur: 22, glass: 50, sheen: true,
-  density: 'comfortable', width: 'default', sidebar: 'expanded', font: 'system', textSize: 'default', anim: true,
+  density: 'comfortable', width: 'default', sidebar: 'expanded', font: 'system', textSize: 'default', anim: true, sound: true,
 };
 const ENUMS = {
   bg: ['royal', 'midnight', 'ocean', 'emerald', 'crimson', 'graphite', 'solid'], fx: ['auto', 'full', 'lite'],
   density: ['compact', 'comfortable', 'spacious'], width: ['focused', 'default', 'full'],
   sidebar: ['expanded', 'compact'], font: ['system', 'humanist', 'serif', 'mono'], textSize: ['small', 'default', 'large', 'xl'],
 };
-const BOOLS = ['pureBlack', 'sheen', 'anim'];
+const BOOLS = ['pureBlack', 'sheen', 'anim', 'sound'];
 const RANGES = { blur: [0, 40], glass: [0, 100] };
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -33,15 +33,15 @@ export function sanitize(raw) {
 export const ACCENTS = [['Royal', '#4169e1'], ['Sapphire', '#1f6feb'], ['Steel', '#7a8fb3'], ['Teal', '#2bb5b0'], ['Emerald', '#2fb872'],
   ['Gold', '#c9a45c'], ['Crimson', '#d6455d'], ['Silver', '#b8c0cc']];
 
-// Light fields behind the glass: soft, static, cool.
+// Accent-tinted light fields behind the glass; opacity varies by background theme.
 export const BACKGROUNDS = {
-  royal: { label: 'Royal', fx: 'Constellation', colors: ['rgba(65,105,225,.50)', 'rgba(150,62,235,.62)', 'rgba(16,185,160,.50)', 'rgba(235,60,95,.52)'] },
-  midnight: { label: 'Midnight', fx: 'Starfield', colors: ['rgba(40,70,140,.26)', 'rgba(15,30,80,.38)', 'rgba(90,110,150,.10)', 'rgba(10,20,50,.30)'] },
-  ocean: { label: 'Ocean', fx: 'Bubbles', colors: ['rgba(0,122,255,.28)', 'rgba(0,160,170,.22)', 'rgba(50,100,200,.20)', 'rgba(90,170,220,.10)'] },
-  emerald: { label: 'Emerald', fx: 'Matrix code', colors: ['rgba(47,184,114,.24)', 'rgba(0,130,110,.28)', 'rgba(90,160,120,.12)', 'rgba(20,70,70,.30)'] },
-  crimson: { label: 'Crimson', fx: 'Embers', colors: ['rgba(214,69,93,.26)', 'rgba(120,20,40,.36)', 'rgba(200,110,100,.10)', 'rgba(60,10,25,.34)'] },
-  graphite: { label: 'Graphite', fx: 'Circuit', colors: ['rgba(150,160,180,.16)', 'rgba(100,110,135,.18)', 'rgba(190,198,215,.08)', 'rgba(80,90,115,.18)'] },
-  solid: { label: 'Solid', fx: 'Still', colors: ['transparent', 'transparent', 'transparent', 'transparent'] },
+  royal: { label: 'Royal', fx: 'Constellation', opacities: [0.50, 0.62, 0.50, 0.52] },
+  midnight: { label: 'Midnight', fx: 'Starfield', opacities: [0.26, 0.38, 0.10, 0.30] },
+  ocean: { label: 'Ocean', fx: 'Bubbles', opacities: [0.28, 0.22, 0.20, 0.10] },
+  emerald: { label: 'Emerald', fx: 'Matrix code', opacities: [0.24, 0.28, 0.12, 0.30] },
+  crimson: { label: 'Crimson', fx: 'Embers', opacities: [0.26, 0.36, 0.10, 0.34] },
+  graphite: { label: 'Graphite', fx: 'Circuit', opacities: [0.16, 0.18, 0.08, 0.18] },
+  solid: { label: 'Solid', fx: 'Still', opacities: [0, 0, 0, 0] },
 };
 
 export const PRESETS = [
@@ -122,6 +122,7 @@ export function apply(p = prefs) {
   root.dataset.pureblack = p.pureBlack ? 'on' : 'off';
   root.dataset.sheen = p.sheen ? 'on' : 'off';
   root.dataset.anim = p.anim ? 'on' : 'off';
+  root.dataset.sound = p.sound ? 'on' : 'off';
   root.dataset.sidebar = p.sidebar;
   root.dataset.fx = p.fx === 'lite' || (p.fx === 'auto' && read('panzeron-fx-auto') === 'lite') ? 'lite' : 'full';
   // accent
@@ -142,11 +143,8 @@ export function apply(p = prefs) {
   // shape, rhythm, type, layout
   st.setProperty('--d', DENSITY[p.density]); st.setProperty('--fs', TEXT[p.textSize]);
   st.setProperty('--maxw', WIDTH[p.width]); st.setProperty('--font', FONTS[p.font]);
-  // Every background light field follows the user's accent, including when the accent is changed live.
-  st.setProperty('--orb-a', `rgba(${rgb.join(',')},.50)`);
-  st.setProperty('--orb-b', `rgba(${rgb.join(',')},.42)`);
-  st.setProperty('--orb-c', `rgba(${rgb.join(',')},.38)`);
-  st.setProperty('--orb-d', `rgba(${rgb.join(',')},.34)`);
+  // light field
+  BACKGROUNDS[p.bg].opacities.forEach((a, i) => st.setProperty(`--orb-${'abcd'[i]}`, `rgba(${rgb.join(',')},${a})`));
   setBackgroundEffect({ bg: p.bg, anim: p.anim, lite: root.dataset.fx === 'lite', rgb });   // each theme's live effect (js/bgfx.js)
 }
 
@@ -170,7 +168,7 @@ export const appearance = {
   get: () => ({ ...prefs }),
   init() { prefs = loadLocal(); apply();  },
   set(patch) { prefs = sanitize({ ...prefs, ...patch }).clean; apply(); persist(); return { ...prefs }; },
-  applyPreset(id) { const pr = PRESETS.find((x) => x.id === id); if (!pr) return; prefs = sanitize({ ...DEFAULTS, fx: prefs.fx, sidebar: prefs.sidebar, ...pr.prefs }).clean; apply(); persist(); if (prefs.fx === 'auto') this.autoDetect(true); },
+  applyPreset(id) { const pr = PRESETS.find((x) => x.id === id); if (!pr) return; prefs = sanitize({ ...DEFAULTS, fx: prefs.fx, sidebar: prefs.sidebar, sound: prefs.sound, ...pr.prefs }).clean; apply(); persist(); if (prefs.fx === 'auto') this.autoDetect(true); },
   reset() { prefs = { ...DEFAULTS }; try { localStorage.removeItem(LS); } catch { /* ignore */ } apply(); api.del('/api/ui-prefs').catch(() => {}); },
   exportText() { return JSON.stringify({ panzeron_theme: 1, ...prefs }, null, 2); },
   importText(text) {                      // throws on invalid JSON; reports which keys were ignored

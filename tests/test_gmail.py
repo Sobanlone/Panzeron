@@ -87,6 +87,20 @@ class GmailTests(unittest.TestCase):
         self.assertNotIn("GOCSPX-secret", json.dumps(self.app.db.query("SELECT value FROM settings")))
         self.assertNotIn("GOCSPX-secret", (self.app.paths.home / "gmail.secret").read_text())    # at rest it is encoded/encrypted, never plain
 
+    def test_import_of_google_client_json(self):
+        good = json.dumps({"installed": {"client_id": "999-xyz.apps.googleusercontent.com", "client_secret": "GOCSPX-fromfile", "token_uri": "https://evil.example/token",
+                                         "auth_uri": "https://evil.example/auth", "redirect_uris": ["http://localhost"]}})
+        st = self.app.gmail_access("import_json", json_text=good)
+        self.assertTrue(st["configured"]); self.assertTrue(st["client_id_hint"].startswith("999-xyz"))
+        self.assertNotIn("GOCSPX-fromfile", json.dumps(self.app.db.query("SELECT value FROM settings")))
+        self.assertEqual(self.app.gmail.ep["token"], self.g.endpoints()["token"])             # web addresses inside the file are never followed
+        self.app.gmail_access("connect", consent=True)
+        self.assertIn(self.g.base, self.opened[-1]); self.assertNotIn("evil.example", self.opened[-1])
+        for bad, msg in [(json.dumps({"web": {"client_id": "a.apps.googleusercontent.com"}}), "Desktop app"), ("not json", "not a valid JSON"), ("[]", "not a Google client file"),
+                         (json.dumps({"installed": {"client_id": "nope"}}), "client ID"), ("x" * 30000, "too large")]:
+            with self.assertRaises(ValueError) as c: self.app.gmail_access("import_json", json_text=bad)
+            self.assertIn(msg, str(c.exception))
+
     def test_oauth_is_read_only_pkce_and_state_checked(self):
         q = self.connect()
         self.assertEqual(q["scope"], [gmail.SCOPE]); self.assertTrue(gmail.SCOPE.endswith("gmail.readonly"))

@@ -47,7 +47,7 @@ SETUP_STEPS = ["Open console.cloud.google.com and create a project (free).",
                "Enable the Gmail API for it.",
                "Set up the OAuth consent screen (External, Testing) and add your own Gmail address as a test user.",
                "Create credentials → OAuth client ID → application type Desktop app.",
-               "Paste the Client ID (and the client secret, if shown) below."]
+               "Download the JSON file (or copy the Client ID and secret) and import it below."]
 
 
 class GmailError(ValueError):
@@ -227,6 +227,24 @@ class GmailGuard:
         self._save(st)
         self.audit.append("user", "gmail.configured", {})
         return self.status()
+
+    def configure_from_json(self, text: str) -> dict[str, Any]:
+        """Reads the `client_secret_....json` file downloaded from Google Cloud. Only the client ID and secret are used; the web addresses
+        inside the file are ignored on purpose (Panzeron always talks to Google's own endpoints), and the file's content is not kept."""
+        if len(text) > 20_000:
+            raise ValueError("That file is too large to be a Google client file.")
+        try:
+            data = json.loads(text)
+        except ValueError:
+            raise ValueError("That is not a valid JSON file. Choose the file you downloaded from Google Cloud (it is named client_secret_….json).")
+        if not isinstance(data, dict):
+            raise ValueError("That JSON file is not a Google client file.")
+        if "installed" not in data:
+            if "web" in data:
+                raise ValueError("This is a 'Web application' client. Panzeron needs a 'Desktop app' client: in Google Cloud go to Credentials → Create credentials → OAuth client ID → Desktop app, then download that JSON.")
+            raise ValueError("That JSON file does not look like a Google OAuth client file.")
+        inst = data["installed"] if isinstance(data["installed"], dict) else {}
+        return self.configure(str(inst.get("client_id", "")), str(inst.get("client_secret", "")))
 
     def consent_details(self, automatic: bool) -> dict[str, Any]:
         return {"scope": "gmail", "label": "Gmail protection",

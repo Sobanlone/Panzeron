@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from panzeron import autostart
 
 
@@ -36,6 +37,10 @@ class FakeReg:
 
 
 class AutostartTests(unittest.TestCase):
+    def test_frozen_startup_command_opens_in_the_tray(self):
+        with patch.object(autostart.sys, "frozen", True, create=True), patch.object(autostart.sys, "executable", r"C:\Panzeron\Panzeron.exe"):
+            self.assertEqual(autostart.launch_command(), r'"C:\Panzeron\Panzeron.exe" --background')
+
     def test_off_by_default_then_on_then_off(self):
         reg = FakeReg()
         self.assertFalse(autostart.status(reg)["enabled"])

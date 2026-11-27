@@ -1,5 +1,7 @@
 # Panzeron — protect the device, the identity, the person
 
+*Panzeron was previously called Ultrimater. On first start it carries over your data folder, settings and "start with Windows" choice automatically.*
+
 A local-first digital protection platform. Antivirus tools look at *objects* (files, URLs); harm to people usually comes from
 *combinations of exposure and manipulation*. Panzeron analyses files, screenshots, documents and messages on your device,
 links the findings into an **exposure graph**, and explains every conclusion with its evidence and how strong that evidence is.
@@ -38,21 +40,21 @@ First look: click **Load synthetic demo data** on the Home. It creates harmless 
 
 ## The interface: floating liquid glass
 
-A near-black field lit by soft blue, violet, teal and crimson light; a blue glass sidebar and a floating glass header bar; rounded translucent cards with a bright top edge; pill buttons and status chips; a dark/light toggle in the header (remembered on this device). **Nothing on screen is invented**: every number, status and label comes from the real engine (unavailable things say "Unavailable", never zero). The synthetic sample data is optional, labelled synthetic, and loads from the header button on the Home (removal is in Settings). The rules that matter (rounded tokens, glass material, working theme toggle, no invented claims) are enforced by `tests/test_design_rules.py`.
+A near-black field lit by a soft accent-coloured light field; an accent-tinted glass sidebar and floating glass header; rounded translucent cards with a bright top edge; pill buttons and status chips; a dark/light toggle in the header (remembered on this device). **Nothing on screen is invented**: every number, status and label comes from the real engine (unavailable things say "Unavailable", never zero). The synthetic sample data is optional, labelled synthetic, and loads from the header button on the Home (removal is in Settings). The rules that matter (rounded tokens, glass material, working theme toggle, no invented claims) are enforced by `tests/test_design_rules.py`.
 
 ## Make it yours: Settings → Appearance
 
 Applies instantly and is remembered (also by the engine, so it survives a cleared browser profile):
 
 * **7 royal themes:** Royal, Sapphire, Gold, Emerald, Platinum, Obsidian, Crimson Ops.
-* **Colour:** 8 accents or any custom colour (button text adapts for readability), 7 cool background light-fields, pure black.
+* **Colour:** 8 accents or any custom colour (button text adapts for readability); the background light field and live effects use the same accent colour.
 * **Glass:** quality (Automatic / Full / Lite), blur 0–40 px, tint, pointer highlight.
-* **Layout & type:** density, content width, sidebar (full / icons only), font, text size, animations.
+* **Layout & type:** density, content width, sidebar (full / icons only), font, text size, animations and sound effects (on by default; startup cue, hover chime, click hum and scan sonar can be switched off here).
 * **Share or back up:** export / copy / import a theme file (validated), reset to defaults.
 
 ## Startup: the dragon and starting with Windows
 
-* **Startup intro.** The orb ignites and a Matrix-style cyber dragon flies around it in 3D perspective, passing in front and behind the ball. The dragon uses the supplied Matrix artwork with animated green code rain and a depth-scaled flight loop. Click, Enter, Space or Esc skips it. The regular Panzeron mascot remains painted in your **accent colour** in Settings → Appearance. The **app icon** (`assets/panzeron.ico`: exe, installer, desktop and Start-menu shortcuts, plus the window/taskbar icon) uses the Panzeron dragon artwork.
+* **Startup intro.** The orb ignites and a dragon circles it (in front, then behind), then the interface appears. The dragon is one shape painted in your **accent colour**, so it changes when you change the accent in Settings → Appearance (choose Crimson for the original red). Click, Enter, Space or Esc skips it. To replace the artwork, put a flat one-colour picture on white at `assets/dragon-source.png` and run `python assets/make_dragon.py`. The **app icon** (`assets/panzeron.ico`: exe, installer, desktop and Start-menu shortcuts, plus the window/taskbar icon) is the same dragon: regenerate it with `python assets/make_icon.py`, then re-run `Create Desktop Shortcut.bat` to refresh an existing shortcut.
 * **It never traps you.** If a script fails or the engine does not answer, the intro still ends (at most 7 s; a second failsafe at 9 s does not depend on the app script). When Windows has reduced motion on, you get a still splash with no movement instead of nothing. It is off when *Startup animation* or *Interface animations* is off (Settings → Appearance → Startup; *Replay intro* previews it).
 * **Start when I sign in to Windows** (per-user, off by default). If you once switched Panzeron off in Task Manager › Startup apps, Windows ignores the entry; Settings now says so and turning the option on clears that block for Panzeron only. If the entry points at an old location, Settings tells you to switch it off and on to repair it.
 
@@ -72,6 +74,24 @@ On **Shield → Browser protection**, press *Allow browser protection…*. Panze
 * **Homepage & start-up:** flags a hijacked homepage.
 
 With **Automatic** on (the default), it does this at start-up and about every 15 minutes while Panzeron is open, adds the browser's download folder to the Downloads watcher and to Quick scans, and shows the status on the Home. It never reads saved passwords, cookies, autofill or page contents. *Turn off* stops it immediately; every grant, check and revoke is in the audit log.
+
+<<<<<<< HEAD
+## Tray, background and the installer
+
+* **Stays in the tray.** Closing the Panzeron window does not stop protection: it keeps running in the system tray (still watching downloads and running automatic checks) and tells you once with a notification. Click the tray icon to open the window again. It only stops when you right-click the tray icon and choose **Quit Panzeron**. If the tray cannot start, closing the window quits, as before.
+* **Start with Windows** (Settings, or the installer task) launches Panzeron straight into the tray with no window (`Panzeron.exe --background`). `Panzeron.exe --quit` asks a running copy to quit.
+* **Installer.** `installer\panzeron.iss` is an Inno Setup script. Run `build_windows.bat` (builds the program, then compiles the installer if Inno Setup is installed), or open the `.iss` in Inno Setup Compiler and press Compile. The result is one file, `installer\Output\Panzeron-Setup-0.1.0.exe`. It lets the user pick any folder or drive, install per-user or for all users, and optionally install the complete project (source, tests, docs, build scripts) next to the program. It closes a running Panzeron first, offers a desktop shortcut and an opt-in start-with-Windows tray entry, and on uninstall asks (default No) before deleting personal data.
+* **Accent colour everywhere.** The intro dragon, its code rain and every theme's live background effect are painted from your accent colour and change live when you change it.
+
+=======
+>>>>>>> 4ad68a720f95357244d95648bb22184e384a6adb
+## The startup intro
+
+Panzeron opens with an accent-coloured Matrix-code dragon built from falling glyphs. It is a real 3D model, flying straight like the dragon in a nature photo: neck and head out front with horns and jaws, a crest of spines, wings spread wide, legs tucked and a tail that ends in a fin. It swims through the air like a fish: a wave runs from the head down to the tail, growing toward the tip, so the tail flaps while the body stays a straight line, and the wings beat with the tips lagging behind. It assembles out of code rain, then flies banked laps around the glowing ball. It is perspective-correct (nearer glyphs are bigger and brighter) and it really passes behind and in front of the ball. Click or press Esc to skip once it has started. With reduced motion it shows a single still frame instead. If anything stops it from starting, the plain dragon from before is used.
+
+## Themes with a living background
+
+Every theme has its own live effect behind the glass (Settings → Appearance → Background): **Royal** constellation, **Midnight** starfield with shooting stars, **Ocean** rising bubbles, **Emerald** Matrix code rain, **Crimson** drifting embers, **Graphite** circuit pulses, **Solid** perfectly still. They pause automatically when the animation switch is off, the system asks for reduced motion, or the window is hidden, and use a lighter version on slower graphics. They are drawn locally and never read or send anything.
 
 ## Gmail protection (connect it yourself, disconnect any time)
 

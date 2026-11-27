@@ -18,18 +18,19 @@ from typing import Any
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 APPROVED_KEY = r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"   # Task Manager's on/off switch
 VALUE_NAME = "Panzeron"
+LEGACY_VALUE_NAME = "Ultrimater"          # the app's former name; see migrate_legacy()
 
 
 def launch_command() -> str | None:
     """The exact command Windows should run at sign-in: the installed exe, or pythonw + Panzeron.pyw (no console window)."""
     if getattr(sys, "frozen", False):
-        return f'"{sys.executable}"'
+        return f'"{sys.executable}" --background'
     pyw = Path(__file__).resolve().parent.parent / "Panzeron.pyw"
     if not pyw.is_file():
         return None
     exe = Path(sys.executable)
     pythonw = exe.with_name("pythonw.exe")
-    return f'"{pythonw if pythonw.is_file() else exe}" "{pyw}"'
+    return f'"{pythonw if pythonw.is_file() else exe}" "{pyw}" --background'
 
 
 def _winreg(reg: Any = None) -> Any:
@@ -41,21 +42,21 @@ def _winreg(reg: Any = None) -> Any:
     return winreg
 
 
-def _disabled_in_windows(r: Any) -> bool:
+def _disabled_in_windows(r: Any, name: str = VALUE_NAME) -> bool:
     """True when the user switched this entry off in Task Manager > Startup apps (first byte odd, e.g. 03 = disabled; 02/06 = enabled)."""
     try:
         with r.OpenKey(r.HKEY_CURRENT_USER, APPROVED_KEY, 0, r.KEY_READ) as k:
-            data, _ = r.QueryValueEx(k, VALUE_NAME)
+            data, _ = r.QueryValueEx(k, name)
         return bool(data) and bool(data[0] & 1)
     except (OSError, TypeError, IndexError):
         return False
 
 
-def _clear_windows_switch(r: Any) -> None:
+def _clear_windows_switch(r: Any, name: str = VALUE_NAME) -> None:
     """Remove Windows' on/off record for Panzeron's own entry only (no record = enabled). Never touches any other entry."""
     try:
         with r.OpenKey(r.HKEY_CURRENT_USER, APPROVED_KEY, 0, r.KEY_SET_VALUE) as k:
-            r.DeleteValue(k, VALUE_NAME)
+            r.DeleteValue(k, name)
     except OSError:
         pass
 
@@ -98,3 +99,22 @@ def set_enabled(enabled: bool, reg: Any = None) -> dict[str, Any]:
             pass
         _clear_windows_switch(r)
     return status(reg)
+
+
+def migrate_legacy(reg: Any = None) -> bool:
+    """After the rename: if the user had 'start with Windows' on under the old name, remove that old entry (it points at a program that
+    is gone) and switch the new one on instead. Only ever touches the two entries named Panzeron / its former name. True if it migrated."""
+    r = _winreg(reg)
+    if r is None:
+        return False
+    try:
+        with r.OpenKey(r.HKEY_CURRENT_USER, RUN_KEY, 0, r.KEY_READ | r.KEY_SET_VALUE) as k:
+            r.QueryValueEx(k, LEGACY_VALUE_NAME)
+            r.DeleteValue(k, LEGACY_VALUE_NAME)
+        was_disabled = _disabled_in_windows(r, LEGACY_VALUE_NAME)
+        _clear_windows_switch(r, LEGACY_VALUE_NAME)
+    except OSError:
+        return False                                            # no old entry (the normal case): nothing to do
+    if not was_disabled and launch_command() is not None:
+        set_enabled(True, reg)
+    return True

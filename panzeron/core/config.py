@@ -9,12 +9,13 @@ from pathlib import Path
 
 
 def default_home() -> Path:
-    env = os.environ.get("PANZERON_HOME")
+    from . import legacy
+    env = os.environ.get("PANZERON_HOME") or os.environ.get(legacy.OLD_ENV)
     if env:
         return Path(env)
-    if sys.platform == "win32":
-        return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Panzeron"
-    return Path.home() / ".panzeron"
+    home = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Panzeron" if sys.platform == "win32" else Path.home() / ".panzeron"
+    legacy.migrate_home(home)                          # first start after the rename: bring the old data folder along
+    return home
 
 
 DEFAULT_SETTINGS = {

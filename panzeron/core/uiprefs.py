@@ -22,6 +22,7 @@ DEFAULTS: dict[str, Any] = {
     "font": "system",            # system | humanist | serif | mono
     "textSize": "default",       # small | default | large | xl
     "anim": True,                # interface animations
+    "sound": True,               # interface sound effects
 }
 ENUMS: dict[str, set[str]] = {
     "bg": {"royal", "midnight", "ocean", "emerald", "crimson", "graphite", "solid"},
@@ -32,7 +33,7 @@ ENUMS: dict[str, set[str]] = {
     "font": {"system", "humanist", "serif", "mono"},
     "textSize": {"small", "default", "large", "xl"},
 }
-BOOLS = {"pureBlack", "sheen", "anim"}
+BOOLS = {"pureBlack", "sheen", "anim", "sound"}
 RANGES = {"blur": (0, 40), "glass": (0, 100)}
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 

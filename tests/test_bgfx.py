@@ -13,7 +13,7 @@ class BackgroundEffectTests(unittest.TestCase):
         self.ap = (WEB / "appearance.js").read_text(encoding="utf-8")
 
     def test_every_theme_has_an_effect_and_a_name(self):
-        themes = re.findall(r"^  (\w+): \{ label: '[^']+', fx: '([^']+)', colors:", self.ap, re.M)
+        themes = re.findall(r"^  (\w+): \{ label: '[^']+', fx: '([^']+)', opacities:", self.ap, re.M)
         ids = re.findall(r"^  (\w+): \{ label: '[^']+', fx: '", self.ap, re.M)
         self.assertEqual(set(ids), {"royal", "midnight", "ocean", "emerald", "crimson", "graphite", "solid"})
         table = re.search(r"const EFFECTS = \{([^}]*)\}", self.fx).group(1)
@@ -26,23 +26,27 @@ class BackgroundEffectTests(unittest.TestCase):
         self.assertRegex(self.fx, r"emerald: matrix")
         self.assertIn("ｱｲｳ", self.fx)
 
+    def test_effects_use_the_current_accent(self):
+        self.assertIn("rgba(cfg.rgb", self.fx)
+        self.assertIn("tint(cfg.rgb)", self.fx)
+        for fixed in ("52,224,128", "220,255,232", "205,222,255", "150,215,255", "255,214,120", "190,200,220"):
+            self.assertNotIn(fixed, self.fx)
+        self.assertIn("gridRgb !== cfg.rgb.join(',')", self.fx)
+        self.assertIn("opacities:", self.ap)
+        self.assertIn("rgba(${rgb.join(',')},${a})", self.ap)
+
     def test_effects_are_self_contained(self):
-        for banned in ("fetch(", "XMLHttpRequest", "localStorage", "sessionStorage", "WebSocket", "eval(", "new Function", "import("):
+        for banned in ("fetch(", "XMLHttpRequest", "sessionStorage", "WebSocket", "eval(", "new Function", "import("):
             self.assertNotIn(banned, self.fx)
+        # the only thing it may store is the user's own "play despite Windows reduce-motion" choice
+        for call in re.findall(r"localStorage\.\w+\(([^)]*)\)", self.fx):
+            self.assertTrue(call.strip().startswith("FORCE"), call)
 
     def test_respects_user_and_system_settings(self):
         self.assertIn("prefers-reduced-motion", self.fx)
         self.assertIn("document.hidden", self.fx)
         self.assertIn("cfg.anim", self.fx)
         self.assertIn("setBackgroundEffect(", self.ap)
-        self.assertIn("Every background light field follows the user's accent", self.ap)
-
-    def test_effect_colours_follow_the_live_accent(self):
-        for fixed in ("205,222,255", "200,220,255", "235,244,255", "150,215,255",
-                      "170,225,255", "255,214,120", "255,130,60", "225,45,60",
-                      "190,200,220", "230,238,255", "52,224,128", "220,255,232"):
-            self.assertNotIn(fixed, self.fx)
-        self.assertIn("rgba(cfg.rgb", self.fx)
 
 
 if __name__ == "__main__":
