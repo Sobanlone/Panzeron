@@ -30,6 +30,8 @@ WHY = {
                    ["Rotate/revoke the secret NOW", "Remove it from the file and from any shared history", "Use a secrets manager"]),
     "username": ("Username / handle", Severity.LOW, "Usernames let people link your accounts across sites and find more about you.",
                  ["Avoid reusing the same handle everywhere", "Crop or blur handles in screenshots"]),
+    "identifier": ("Labelled identifier / code", Severity.LOW, "A code tied to an event, team, ticket or account can be used to look you up or link records about you.",
+                   ["Avoid sharing codes tied to your registration", "Crop or blur the code before posting"]),
     "person_name": ("Personal name", Severity.LOW, "A name on its own is weakly identifying, but it becomes much stronger combined with a school, location or username.",
                     ["Consider whether the name needs to be visible"]),
     "org": ("School / institution", Severity.LOW, "A school or employer narrows who you are to a small group of people.",
@@ -44,7 +46,8 @@ WHY = {
                      ["Check who is authorised to receive this document"]),
 }
 _CONF_MAP = {"low": Confidence.LOW, "medium": Confidence.MEDIUM, "high": Confidence.HIGH}
-_SEV_BUMP = {"credential": {"private_key": Severity.CRITICAL}, "location": {"gps_coordinates": Severity.HIGH}}
+_SEV_BUMP = {"credential": {"private_key": Severity.CRITICAL}, "location": {"gps_coordinates": Severity.HIGH},
+             "id_document": {"event_badge": Severity.MEDIUM}}
 
 
 @dataclass

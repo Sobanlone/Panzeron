@@ -66,7 +66,7 @@ SCRIPT_EXTS = {".ps1", ".vbs", ".js", ".bat", ".cmd", ".hta", ".wsf", ".vbe", ".
 RISKY_EXTS = {".exe", ".dll", ".sys", ".scr", ".com", ".cpl", ".msi", ".ocx", ".drv", ".efi", ".lnk", ".jar", ".inf",
               ".ps1", ".psm1", ".vbs", ".vbe", ".js", ".jse", ".wsf", ".hta", ".bat", ".cmd", ".sh", ".py",
               ".doc", ".docx", ".docm", ".dotm", ".xls", ".xlsx", ".xlsm", ".xlsb", ".xlam", ".ppt", ".pptx", ".pptm", ".rtf", ".pdf",
-              ".zip", ".php", ".phtml", ".asp", ".aspx", ".jsp", ".jspx", ".cfm", ".txt", ".html", ".htm", ".iso", ".img"}
+              ".zip", ".php", ".phtml", ".asp", ".aspx", ".jsp", ".jspx", ".cfm", ".txt", ".html", ".htm", ".iso", ".img", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".lzma", ".cab", ".arj", ".ace", ".uue", ".xxe", ".zoo"}
 
 SCRIPT_INDICATORS = [
     ("encoded_command", re.compile(rb"(?i)-enc(odedcommand)?\s+[A-Za-z0-9+/=]{20,}"), "PowerShell encoded command"),

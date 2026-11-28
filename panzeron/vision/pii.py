@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Hit:
-    kind: str          # email|phone|card|national_id|iban|credential|username|person_name|org|location|dob|id_document|confidential
+    kind: str          # email|phone|card|national_id|iban|credential|username|person_name|org|location|dob|id_document|identifier|confidential
     subtype: str       # more specific label, e.g. "aws_access_key"
     start: int
     end: int
@@ -59,9 +59,23 @@ _GPS = re.compile(r"(?<![\d.])(-?\d{1,2}\.\d{3,})\s*[,;]\s*(-?\d{1,3}\.\d{3,})(?
 _ADDRESS = re.compile(r"\b\d{1,5}\s+(?:[A-Z][a-z]+\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Boulevard|Blvd)\b\.?")
 _USER_AT = re.compile(r"(?<![\w@./])@([A-Za-z0-9_.]{3,30})\b(?!\.[a-z]{2,}\b)")
 _USER_LABEL = re.compile(r"(?i:\b(?:user(?:name)?|handle|login|insta(?:gram)?|twitter|tiktok)\b)\s*[:=]\s*@?([A-Za-z0-9_.-]{3,30})")
-_ORG = re.compile(r"\b((?:[A-Z][\w'&-]+[ \t]+){1,4}(?:High School|Middle School|Elementary School|Secondary School|Academy|University|College|Institute))\b|\b(University of (?:[A-Z][\w'-]+)(?: [A-Z][\w'-]+){0,2})\b")
+_ORG = re.compile(r"\b((?:[A-Z][\w'&-]+[ \t]+){1,4}(?:High School|Middle School|Elementary School|Secondary School|Academy|University|College|Institute|School))\b|\b(University of (?:[A-Z][\w'-]+)(?: [A-Z][\w'-]+){0,2})\b")
 _NAME_LABEL = re.compile(r"(?i:\b(?:full name|student name|patient name|employee name|name)\b)[ \t]*[:=][ \t]*([A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+){0,3})")
 _NAME_INTRO = re.compile(r"(?i:\bmy name is\b)\s+([A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+){0,2})")
+# Badges and event passes print a role label above (or beside) the person's name instead of "Name:".
+_NAME_ROLE = re.compile(
+    r"(?im)\b(?:team[ \t]+lead(?:er)?|participant|attendee|delegate|exhibitor|student|speaker|presenter|"
+    r"panelist|cardholder|issued[ \t]+to|member|representative|contestant|player|author|prepared[ \t]+by|"
+    r"submitted[ \t]+by)\b[ \t]*[:.\-]?[ \t]*(?:\r?\n[ \t]*)?([A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+){0,3})")
+_NAME_ROLE_CAPS = re.compile(
+    r"(?m)\b(?:TEAM[ \t]+LEAD(?:ER)?|PARTICIPANT|ATTENDEE|DELEGATE|EXHIBITOR|STUDENT|SPEAKER|PRESENTER|"
+    r"PANELIST|CARDHOLDER|MEMBER|REPRESENTATIVE|CONTESTANT|PLAYER|AUTHOR)\b[ \t]*[:.\-]?[ \t]*"
+    r"(?:\r?\n[ \t]*)?([A-Z][A-Z'.-]+(?:[ \t]+[A-Z][A-Z'.-]+){0,3})")
+# Non-government identifiers printed on badges, tickets and forms (team code, badge number, ...).
+_CODE_LABEL = re.compile(
+    r"(?i)\b(?:team[ \t]+code|badge[ \t]*(?:no|number|id)?|(?:id|reg(?:istration)?|roll|ticket)[ \t]*(?:no|number|code)|"
+    r"employee[ \t]*(?:id|no)|member[ \t]*(?:id|no)|event[ \t]+pass)\b[ \t]*[:#\-]?[ \t]*"
+    r"(?:\r?\n[ \t]*)?([A-Z0-9][A-Z0-9\-/]{2,20})\b")
 _DOB = re.compile(r"(?i:\b(?:date of birth|dob|d\.o\.b|born on)\b)\s*[:\-]?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{4}-\d{2}-\d{2})")
 _MRZ = re.compile(r"P<[A-Z]{3}[A-Z<]{5,39}\s*\n?\s*[A-Z0-9<]{9}\d[A-Z<]{3}\d{6}")
 _PLACEHOLDER = re.compile(r"^(?:[*x•.]+|<.*>|\{.*\}|your[_-]?\w*|changeme|password|example|redacted)$", re.I)
@@ -80,9 +94,25 @@ _ID_CUES = ["passport", "driver licen", "driving licen", "national id", "identit
             "nationality", "place of birth", "date of issue", "date of expiry", "expiry date", "cnic", "licence no",
             "license no", "surname", "given names", "social security"]
 _CONF_MARKERS = re.compile(r"(?i)\b(strictly confidential|confidential|internal use only|not for distribution|privileged and confidential|do not share|attorney[- ]client)\b")
+# Event badges / lanyards share a small vocabulary; two of these together is strong evidence of a badge layout.
+_BADGE_CUES = re.compile(r"(?i)\b(team[ \t]+code|team[ \t]+lead(?:er)?|participant|attendee|delegate|exhibitor|"
+                         r"event[ \t]+pass|lanyard|badge)\b")
+_CAPS_STOP = {"TEAM", "CODE", "SCHOOL", "TABLE", "BADGE", "EVENT", "PASS", "HALL", "ROOM", "DATE", "TIME",
+              "NAME", "LEAD", "LEADER", "MEMBER", "STUDENT", "SPEAKER", "SPONSOR", "NATIONAL", "INTERNATIONAL"}
+
+
+def _caps_name_ok(raw: str) -> bool:
+    """All-caps role labels are noisy in OCR; require a real two-word name and reject layout words."""
+    toks = raw.split()
+    if not 2 <= len(toks) <= 4:
+        return False
+    if any(t in _CAPS_STOP or any(ch.isdigit() for ch in t) for t in toks):
+        return False
+    return all(2 <= len(t) <= 20 for t in toks)
+
 
 _PRIORITY = {"credential": 0, "card": 1, "iban": 1, "national_id": 1, "email": 2, "location": 3, "phone": 4,
-             "dob": 5, "person_name": 6, "org": 6, "username": 7, "id_document": 8, "confidential": 8}
+             "identifier": 5, "dob": 5, "person_name": 6, "org": 6, "username": 7, "id_document": 8, "confidential": 8}
 
 
 def detect(text: str) -> list[Hit]:
@@ -132,6 +162,17 @@ def detect(text: str) -> list[Hit]:
         for m in rx.finditer(text):
             hits.append(Hit("person_name", "", m.start(1), m.end(1), m.group(1), "medium", rule,
                             "Name found after a label; no NER model is used"))
+    for m in _NAME_ROLE.finditer(text):
+        hits.append(Hit("person_name", "role_label", m.start(1), m.end(1), m.group(1), "medium", "regex:role_name",
+                        "Name printed under a role label (badge / event pass layout)"))
+    for m in _NAME_ROLE_CAPS.finditer(text):
+        if _caps_name_ok(m.group(1)):
+            hits.append(Hit("person_name", "role_label_caps", m.start(1), m.end(1), m.group(1), "low", "regex:role_name_caps",
+                            "All-caps name under a role label; OCR casing is unreliable"))
+    for m in _CODE_LABEL.finditer(text):
+        label = m.group(0).replace(m.group(1), "", 1).strip(" :#-\t\r\n")
+        hits.append(Hit("identifier", "labelled_code", m.start(1), m.end(1), m.group(1), "medium", "regex:labelled_code",
+                        f"Code follows the label '{label}'"))
     for m in _ORG.finditer(text):
         g = m.group(1) or m.group(2)
         s = m.start(1) if m.group(1) else m.start(2)
@@ -150,6 +191,11 @@ def detect(text: str) -> list[Hit]:
         conf = "medium" if len(cues) >= 3 else "low"
         hits.append(Hit("id_document", "id_document_cues", 0, 0, ", ".join(cues), conf, "rule:id-cues",
                         f"{len(cues)} identity-document phrases present: {', '.join(cues)}"))
+    badge_cues = sorted({m.group(1).lower() for m in _BADGE_CUES.finditer(text)})
+    team_pair = any(c.startswith("team lead") for c in badge_cues) and "team code" in badge_cues
+    if (team_pair or len(badge_cues) >= 3) and not any(h.subtype in ("passport_mrz", "event_badge") for h in hits):
+        hits.append(Hit("id_document", "event_badge", 0, 0, ", ".join(badge_cues), "medium", "rule:badge-cues",
+                        f"Event-badge layout cues present: {', '.join(badge_cues)}"))
     for m in _CONF_MARKERS.finditer(text):
         hits.append(Hit("confidential", "confidentiality_marker", m.start(), m.end(), m.group(), "medium", "regex:confidential"))
 
